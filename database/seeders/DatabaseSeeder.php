@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\UserType;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -16,11 +17,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'Demo Admin',
-            'email' => 'admin@bluestar.test',
-            'phone' => '+252611000000',
-            'password' => bcrypt('password'),
+        $this->call([
+            RolesAndPermissionsSeeder::class,
+            ReferenceDataSeeder::class,
         ]);
+
+        $admin = User::query()->firstOrCreate(
+            ['email' => 'admin@bluestar.test'],
+            [
+                'name' => 'Demo Admin',
+                'phone' => '+252611000000',
+                'type' => UserType::Staff,
+                'password' => bcrypt('password'),
+            ]
+        );
+
+        $admin->assignRole('super-admin');
     }
 }

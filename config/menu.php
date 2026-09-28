@@ -32,13 +32,13 @@ return [
         'group' => 'Administration',
         'items' => [
             ['label' => 'Users', 'route' => 'users.index', 'icon' => 'users', 'permission' => 'users.view'],
-            ['label' => 'Setup', 'route' => 'setup.index', 'icon' => 'cog-6-tooth', 'permission' => 'setup.settings'],
+            ['label' => 'Setup', 'route' => 'setup.index', 'icon' => 'cog-6-tooth', 'permission' => 'setup.branches'],
         ],
     ],
     [
         'group' => 'Insights',
         'items' => [
-            ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'chart-bar', 'permission' => 'reports.transfers'],
+            ['label' => 'Reports', 'route' => 'reports.index', 'icon' => 'chart-bar', 'permission' => 'reports.agent_statement'],
             ['label' => 'Audit Log', 'route' => 'audit.index', 'icon' => 'shield-check', 'permission' => 'audit.view'],
         ],
     ],

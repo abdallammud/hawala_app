@@ -606,14 +606,19 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
 - **Done when:** all ledger tests pass without any UI.
 
 ### Phase 2 — Setup & access
-- [ ] spatie/permission, permission + role seeders, `Gate::before` for super-admin, role editor UI
-- [ ] `config/menu.php` + permission-aware sidebar
-- [ ] Branches, account types, currencies, company accounts CRUD
-- [ ] Users CRUD (type, branch, role, commission overrides, credit limit), payout accounts,
-      deactivate with balance check
-- [ ] Settings page (tabs), activity logging on all setup models
-- [ ] Policies + route middleware for everything above; tests that forbidden users get 403
+- [x] spatie/permission, permission + role seeders, `Gate::before` for super-admin — role editor
+      UI still pending (roles/permissions are seeded, not yet editable from the UI)
+- [x] `config/menu.php` + permission-aware sidebar
+- [ ] Branches, account types, currencies, company accounts CRUD — branches and account types
+      exist as minimal seeded reference data only (`ReferenceDataSeeder`), no CRUD screens yet
+- [x] Users CRUD (type, branch, role, commission overrides, credit limit), payout accounts,
+      deactivate with balance check (`hasNonZeroBalances()` stubbed false until Phase 1 ledger lands)
+- [ ] Settings page (tabs), activity logging on all setup models — activity logging is live on
+      User/Branch/AccountType/PayoutAccount; Settings UI not built
+- [x] Policies + route middleware for everything above; tests that forbidden users get 403
 - **Done when:** super admin can set up the whole company from the UI.
+  - Not yet — Users is done; Branches/Account Types/Currencies/Company Accounts/Settings/Roles
+    editor are still outstanding within this phase.
 
 ### Phase 3 — Balances
 - [ ] balance_requests model, form, admin inbox, approve/reject, maker ≠ checker

@@ -1,4 +1,14 @@
-@php $menu = config('menu'); @endphp
+@php
+    $menu = collect(config('menu'))
+        ->map(function ($section) {
+            $section['items'] = collect($section['items'])
+                ->filter(fn ($item) => ! $item['permission'] || auth()->user()->can($item['permission']))
+                ->all();
+
+            return $section;
+        })
+        ->filter(fn ($section) => count($section['items']) > 0);
+@endphp
 
 <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-6">
     @foreach ($menu as $section)
