@@ -1,4 +1,6 @@
 <x-layouts.app :title="__('Users')">
+    @include('partials.users-tabs', ['active' => 'users'])
+
     <x-card :padding="false">
         <x-slot:actions>
             @can('create', \App\Models\User::class)

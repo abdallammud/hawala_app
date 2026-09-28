@@ -606,8 +606,9 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
 - **Done when:** all ledger tests pass without any UI.
 
 ### Phase 2 — Setup & access
-- [x] spatie/permission, permission + role seeders, `Gate::before` for super-admin — role editor
-      UI still pending (roles/permissions are seeded, not yet editable from the UI)
+- [x] spatie/permission, permission + role seeders, `Gate::before` for super-admin, role editor
+      UI (Roles tab under Users: create/edit roles, assign permissions grouped by module,
+      protects the super-admin role, blocks deleting a role still assigned to users)
 - [x] `config/menu.php` + permission-aware sidebar
 - [ ] Branches, account types, currencies, company accounts CRUD — branches and account types
       exist as minimal seeded reference data only (`ReferenceDataSeeder`), no CRUD screens yet

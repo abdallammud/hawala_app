@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Users\PayoutAccountsController;
+use App\Http\Controllers\Users\RolesController;
 use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +32,15 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:users.deactivate')->group(function () {
         Route::post('/users/{user}/deactivate', [UsersController::class, 'deactivate'])->name('users.deactivate');
         Route::post('/users/{user}/activate', [UsersController::class, 'activate'])->name('users.activate');
+    });
+
+    Route::middleware('can:setup.roles')->group(function () {
+        Route::get('/users/roles', [RolesController::class, 'index'])->name('roles.index');
+        Route::get('/users/roles/create', [RolesController::class, 'create'])->name('roles.create');
+        Route::post('/users/roles', [RolesController::class, 'store'])->name('roles.store');
+        Route::get('/users/roles/{role}/edit', [RolesController::class, 'edit'])->name('roles.edit');
+        Route::put('/users/roles/{role}', [RolesController::class, 'update'])->name('roles.update');
+        Route::delete('/users/roles/{role}', [RolesController::class, 'destroy'])->name('roles.destroy');
     });
 
     // --- Placeholder screens -------------------------------------------------
