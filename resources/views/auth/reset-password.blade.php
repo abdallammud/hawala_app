@@ -14,5 +14,9 @@
         <x-input name="password_confirmation" label="{{ __('Confirm password') }}" type="password" autocomplete="new-password" />
 
         <x-button type="submit" class="w-full" size="lg">{{ __('Reset password') }}</x-button>
+
+        <p class="text-center text-sm text-slate-500">
+            <a href="{{ route('login') }}" class="font-medium text-brand-600 hover:text-brand-700">{{ __('Back to login') }}</a>
+        </p>
     </form>
 </x-layouts.guest>

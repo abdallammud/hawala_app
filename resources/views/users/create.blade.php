@@ -44,7 +44,7 @@
                 </div>
 
                 <div class="flex justify-end gap-3 pt-2">
-                    <x-button :href="route('users.index')" variant="ghost">{{ __('Cancel') }}</x-button>
+                    <x-button :href="route('users.index')" variant="ghost">{{ __('Back') }}</x-button>
                     <x-button type="submit">{{ __('Create user') }}</x-button>
                 </div>
             </form>

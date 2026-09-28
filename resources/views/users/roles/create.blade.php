@@ -15,7 +15,7 @@
             </div>
 
             <div class="flex justify-end gap-3">
-                <x-button :href="route('roles.index')" variant="ghost">{{ __('Cancel') }}</x-button>
+                <x-button :href="route('roles.index')" variant="ghost">{{ __('Back') }}</x-button>
                 <x-button type="submit">{{ __('Create role') }}</x-button>
             </div>
         </form>

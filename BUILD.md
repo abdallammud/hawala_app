@@ -610,8 +610,10 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
       UI (Roles tab under Users: create/edit roles, assign permissions grouped by module,
       protects the super-admin role, blocks deleting a role still assigned to users)
 - [x] `config/menu.php` + permission-aware sidebar
-- [ ] Branches, account types, currencies, company accounts CRUD — branches and account types
-      exist as minimal seeded reference data only (`ReferenceDataSeeder`), no CRUD screens yet
+- [x] Branches, account types CRUD (create/edit, deactivate guarded by active
+      users / active payout accounts) — currencies and company accounts still pending
+      (company accounts needs Phase 1's `ledger_accounts`; currencies belongs with Phase 4's
+      rate fetching)
 - [x] Users CRUD (type, branch, role, commission overrides, credit limit), payout accounts,
       deactivate with balance check (`hasNonZeroBalances()` stubbed false until Phase 1 ledger lands)
 - [ ] Settings page (tabs), activity logging on all setup models — activity logging is live on

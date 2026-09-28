@@ -25,6 +25,11 @@ class Branch extends Model
         return $this->hasMany(User::class);
     }
 
+    public function hasActiveUsers(): bool
+    {
+        return $this->users()->where('is_active', true)->exists();
+    }
+
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()->logOnly(['name', 'city', 'is_active'])->logOnlyDirty()->dontSubmitEmptyLogs();

@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Setup\AccountTypesController;
+use App\Http\Controllers\Setup\BranchesController;
+use App\Http\Controllers\Setup\SetupController;
 use App\Http\Controllers\Users\PayoutAccountsController;
 use App\Http\Controllers\Users\RolesController;
 use App\Http\Controllers\Users\UsersController;
@@ -43,6 +46,26 @@ Route::middleware('auth')->group(function () {
         Route::delete('/users/roles/{role}', [RolesController::class, 'destroy'])->name('roles.destroy');
     });
 
+    Route::get('/setup', [SetupController::class, 'index'])->middleware('can:setup.branches')->name('setup.index');
+
+    Route::prefix('setup/branches')->middleware('can:setup.branches')->name('setup.branches.')->group(function () {
+        Route::get('/', [BranchesController::class, 'index'])->name('index');
+        Route::get('/create', [BranchesController::class, 'create'])->name('create');
+        Route::post('/', [BranchesController::class, 'store'])->name('store');
+        Route::get('/{branch}/edit', [BranchesController::class, 'edit'])->name('edit');
+        Route::put('/{branch}', [BranchesController::class, 'update'])->name('update');
+        Route::post('/{branch}/toggle', [BranchesController::class, 'toggle'])->name('toggle');
+    });
+
+    Route::prefix('setup/account-types')->middleware('can:setup.account_types')->name('setup.account-types.')->group(function () {
+        Route::get('/', [AccountTypesController::class, 'index'])->name('index');
+        Route::get('/create', [AccountTypesController::class, 'create'])->name('create');
+        Route::post('/', [AccountTypesController::class, 'store'])->name('store');
+        Route::get('/{accountType}/edit', [AccountTypesController::class, 'edit'])->name('edit');
+        Route::put('/{accountType}', [AccountTypesController::class, 'update'])->name('update');
+        Route::post('/{accountType}/toggle', [AccountTypesController::class, 'toggle'])->name('toggle');
+    });
+
     // --- Placeholder screens -------------------------------------------------
     // Each of these is replaced by a real controller + views as its BUILD.md
     // phase is implemented. Kept here so the full navigation can be reviewed
@@ -77,10 +100,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/company-accounts', $placeholder(
         __('Company Accounts'), __('Balances and movements for every company account.'), 3, 'building-library'
     ))->middleware('can:company_accounts.view')->name('company-accounts.index');
-
-    Route::get('/setup', $placeholder(
-        __('Setup'), __('Branches, account types, currencies, fees, settings, SMS templates and roles.'), 2, 'cog-6-tooth'
-    ))->middleware('can:setup.branches')->name('setup.index');
 
     Route::get('/reports', $placeholder(
         __('Reports'), __('Transfers, agent statements, uncollected, commissions, profit and more.'), 6, 'chart-bar'

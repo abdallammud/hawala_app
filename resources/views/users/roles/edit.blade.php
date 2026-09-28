@@ -4,6 +4,10 @@
     <x-card :title="$role->name" :subtitle="__('Update the role name and its permissions.')">
         @if ($isProtected)
             <x-alert type="info">{{ __('The super-admin role always has full access and cannot be edited.') }}</x-alert>
+
+            <div class="flex justify-end mt-6">
+                <x-button :href="route('roles.index')" variant="ghost">{{ __('Back') }}</x-button>
+            </div>
         @else
             <form method="POST" action="{{ route('roles.update', $role) }}" class="space-y-6">
                 @csrf
@@ -19,7 +23,7 @@
                 </div>
 
                 <div class="flex justify-end gap-3">
-                    <x-button :href="route('roles.index')" variant="ghost">{{ __('Cancel') }}</x-button>
+                    <x-button :href="route('roles.index')" variant="ghost">{{ __('Back') }}</x-button>
                     <x-button type="submit">{{ __('Save changes') }}</x-button>
                 </div>
             </form>
