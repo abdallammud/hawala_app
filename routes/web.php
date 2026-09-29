@@ -1,6 +1,10 @@
 <?php
 
+use App\Http\Controllers\Balances\BalanceRequestsController;
+use App\Http\Controllers\Balances\CommissionController;
+use App\Http\Controllers\Balances\CompanyAccountsController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\Setup\AccountTypesController;
 use App\Http\Controllers\Setup\BranchesController;
 use App\Http\Controllers\Setup\SetupController;
@@ -18,6 +22,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', [UsersController::class, 'index'])->name('users.index');
         Route::get('/users/{user}/edit', [UsersController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UsersController::class, 'update'])->name('users.update');
+        Route::get('/users/{user}/statement', [UsersController::class, 'statement'])->name('users.statement');
 
         Route::post('/users/{user}/payout-accounts', [PayoutAccountsController::class, 'store'])
             ->middleware('can:users.manage_payout_accounts')->name('users.payout-accounts.store');
@@ -66,6 +71,56 @@ Route::middleware('auth')->group(function () {
         Route::post('/{accountType}/toggle', [AccountTypesController::class, 'toggle'])->name('toggle');
     });
 
+    // --- Balance requests ------------------------------------------------
+    Route::middleware('can:balances.request')->group(function () {
+        Route::get('/balance-requests', [BalanceRequestsController::class, 'index'])->name('balance-requests.index');
+        Route::get('/balance-requests/create', [BalanceRequestsController::class, 'create'])->name('balance-requests.create');
+        Route::post('/balance-requests', [BalanceRequestsController::class, 'store'])->name('balance-requests.store');
+    });
+
+    Route::middleware('can:balances.view_all')->group(function () {
+        Route::get('/balance-requests/inbox', [BalanceRequestsController::class, 'inbox'])->name('balance-requests.inbox');
+    });
+
+    Route::post('/balance-requests/{balanceRequest}/approve', [BalanceRequestsController::class, 'approve'])->name('balance-requests.approve');
+    Route::post('/balance-requests/{balanceRequest}/reject', [BalanceRequestsController::class, 'reject'])->name('balance-requests.reject');
+
+    // --- Commission --------------------------------------------------------
+    Route::middleware('can:commission.view_own')->group(function () {
+        Route::get('/commission', [CommissionController::class, 'index'])->name('commission.index');
+    });
+    Route::post('/commission/move', [CommissionController::class, 'move'])->middleware('can:commission.move')->name('commission.move');
+    Route::post('/commission/withdraw', [CommissionController::class, 'withdraw'])->middleware('can:commission.request_withdraw')->name('commission.withdraw');
+
+    // --- Company accounts ----------------------------------------------------
+    // Static-segment routes (/create, /{id}/edit, …) must be registered before
+    // the bare /{companyAccount} wildcard below, or Laravel tries to resolve
+    // "create" etc. as a company account id and 404s.
+    Route::middleware('can:company_accounts.view')->group(function () {
+        Route::get('/company-accounts', [CompanyAccountsController::class, 'index'])->name('company-accounts.index');
+    });
+
+    Route::middleware('can:company_accounts.manage')->group(function () {
+        Route::get('/company-accounts/create', [CompanyAccountsController::class, 'create'])->name('company-accounts.create');
+        Route::post('/company-accounts', [CompanyAccountsController::class, 'store'])->name('company-accounts.store');
+        Route::get('/company-accounts/{companyAccount}/edit', [CompanyAccountsController::class, 'edit'])->name('company-accounts.edit');
+        Route::put('/company-accounts/{companyAccount}', [CompanyAccountsController::class, 'update'])->name('company-accounts.update');
+        Route::post('/company-accounts/{companyAccount}/toggle', [CompanyAccountsController::class, 'toggle'])->name('company-accounts.toggle');
+    });
+
+    Route::middleware('can:company_accounts.view')->group(function () {
+        Route::get('/company-accounts/{companyAccount}', [CompanyAccountsController::class, 'show'])->name('company-accounts.show');
+    });
+
+    Route::middleware('can:company_accounts.transfer')->group(function () {
+        Route::get('/company-accounts-transfer', [CompanyAccountsController::class, 'transferCreate'])->name('company-accounts.transfer.create');
+        Route::post('/company-accounts-transfer', [CompanyAccountsController::class, 'transferStore'])->name('company-accounts.transfer.store');
+    });
+
+    // --- Notifications -------------------------------------------------------
+    Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read', [NotificationsController::class, 'markRead'])->name('notifications.read');
+
     // --- Placeholder screens -------------------------------------------------
     // Each of these is replaced by a real controller + views as its BUILD.md
     // phase is implemented. Kept here so the full navigation can be reviewed
@@ -89,18 +144,6 @@ Route::middleware('auth')->group(function () {
         __('Payout Queue'), __('Branch queue for payout agents to claim and pay transfers.'), 5, 'inbox-stack'
     ))->middleware('can:queue.view')->name('queue.index');
 
-    Route::get('/balance-requests', $placeholder(
-        __('Balance Requests'), __('Top-ups, credit, payout funding and commission moves.'), 3, 'banknotes'
-    ))->middleware('can:balances.request')->name('balance-requests.index');
-
-    Route::get('/commission', $placeholder(
-        __('Commission'), __('Move commission to send balance or request a withdrawal.'), 3, 'gift'
-    ))->middleware('can:commission.view_own')->name('commission.index');
-
-    Route::get('/company-accounts', $placeholder(
-        __('Company Accounts'), __('Balances and movements for every company account.'), 3, 'building-library'
-    ))->middleware('can:company_accounts.view')->name('company-accounts.index');
-
     Route::get('/reports', $placeholder(
         __('Reports'), __('Transfers, agent statements, uncollected, commissions, profit and more.'), 6, 'chart-bar'
     ))->middleware('can:reports.agent_statement')->name('reports.index');
@@ -108,10 +151,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/audit-log', $placeholder(
         __('Audit Log'), __('Every important action: who, what, when, before and after.'), 2, 'shield-check'
     ))->middleware('can:audit.view')->name('audit.index');
-
-    Route::get('/notifications', $placeholder(
-        __('Notifications'), __('Balance request updates, expired claims and large transfers.'), 3, 'bell'
-    ))->name('notifications.index');
 });
 
 require __DIR__.'/auth.php';

@@ -63,13 +63,22 @@ class User extends Authenticatable
         return $this->hasMany(PayoutAccount::class);
     }
 
+    public function balanceRequests(): HasMany
+    {
+        return $this->hasMany(BalanceRequest::class);
+    }
+
     /**
      * True while any ledger balance is non-zero. Deactivation is blocked
-     * while this is true. Always false until Phase 1 wires the ledger.
+     * while this is true.
      */
     public function hasNonZeroBalances(): bool
     {
-        return false;
+        return LedgerAccount::query()
+            ->where('owner_type', $this->getMorphClass())
+            ->where('owner_id', $this->id)
+            ->where('balance_cents', '!=', 0)
+            ->exists();
     }
 
     public function getActivitylogOptions(): LogOptions

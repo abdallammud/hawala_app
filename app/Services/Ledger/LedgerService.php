@@ -124,6 +124,7 @@ class LedgerService
             [
                 'normal_side' => $type->normalSide()->value,
                 'name' => $this->accountName($owner, $type),
+                'balance_cents' => 0,
             ]
         );
     }
@@ -144,6 +145,7 @@ class LedgerService
             [
                 'normal_side' => $type->normalSide()->value,
                 'name' => $type->label(),
+                'balance_cents' => 0,
             ]
         );
     }

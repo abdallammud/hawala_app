@@ -629,16 +629,25 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
     editor are still outstanding within this phase.
 
 ### Phase 3 — Balances
-- [ ] balance_requests model, form, admin inbox, approve/reject, maker ≠ checker
-- [ ] topup_paid, topup_credit (max credit check), credit_repayment, payout_funding,
+- [x] balance_requests model, form, admin inbox, approve/reject, maker ≠ checker
+- [x] topup_paid, topup_credit (max credit check), credit_repayment, payout_funding,
       payout_return, commission_move, commission_withdraw
-- [ ] Currency input on all money forms (USD only until Phase 4 rates exist; design for it)
-- [ ] Company account statement + company transfers with charges
-- [ ] Manual adjustments (maker ≠ checker)
-- [ ] Notifications (database) for request status changes
-- [ ] Agent statement page (running balance) for each balance
-- [ ] Tests for every kind, approvals, self-approval blocked
-- **Done when:** every balance moves correctly through the UI and verify-ledger passes.
+- [x] Currency input on all money forms (USD only until Phase 4 rates exist — the
+      balance_requests columns for original_currency/original_amount_cents/rate already
+      exist, forms are USD-only for now per spec)
+- [x] Company account statement + company transfers with charges
+- [ ] Manual adjustments UI — `adjustments.create`/`adjustments.approve` permissions are
+      seeded and `JournalType::ManualAdjustment` works (used directly in tests/seeders), but
+      there's no screen yet for an admin to create one through the UI. Still pending.
+- [x] Notifications (database) for request status changes — submission notifies eligible
+      approvers, decisions notify the requester/beneficiary
+- [x] Agent statement page (running balance) for each balance — reuses the same
+      `LedgerStatement` helper as the company account statement; read-only (never lazily
+      creates a ledger account just because someone viewed the page)
+- [x] Tests for every kind, approvals, self-approval blocked
+- **Done when:** every balance moves correctly through the UI and verify-ledger passes. ✅
+  (manual adjustments UI is the one item still open — everything else is done, tested, and
+  `hawala:verify-ledger` is clean)
 
 ### Phase 4 — Rates, fees, commission
 - [ ] exchange_rates, providers, `hawala:fetch-rates`, manual override, RateService, stale handling

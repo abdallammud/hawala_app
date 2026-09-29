@@ -81,6 +81,12 @@
                 <div class="ml-auto flex items-center gap-2">
                     <a href="{{ Route::has('notifications.index') ? route('notifications.index') : '#' }}" class="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg">
                         <x-icon name="bell" class="w-5 h-5" />
+                        @php $unread = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
+                        @if ($unread > 0)
+                            <span class="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-gold-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                                {{ $unread > 9 ? '9+' : $unread }}
+                            </span>
+                        @endif
                     </a>
 
                     <div x-data="{ open: false }" class="relative">

@@ -13,19 +13,23 @@
                     </div>
                 </div>
 
-                @can('deactivate', $user)
-                    @if ($user->is_active)
-                        <form method="POST" action="{{ route('users.deactivate', $user) }}">
-                            @csrf
-                            <x-button type="submit" variant="danger" size="sm">{{ __('Deactivate') }}</x-button>
-                        </form>
-                    @else
-                        <form method="POST" action="{{ route('users.activate', $user) }}">
-                            @csrf
-                            <x-button type="submit" variant="secondary" size="sm">{{ __('Reactivate') }}</x-button>
-                        </form>
-                    @endif
-                @endcan
+                <div class="flex items-center gap-3">
+                    <x-button :href="route('users.statement', $user)" variant="secondary" size="sm">{{ __('Statement') }}</x-button>
+
+                    @can('deactivate', $user)
+                        @if ($user->is_active)
+                            <form method="POST" action="{{ route('users.deactivate', $user) }}">
+                                @csrf
+                                <x-button type="submit" variant="danger" size="sm">{{ __('Deactivate') }}</x-button>
+                            </form>
+                        @else
+                            <form method="POST" action="{{ route('users.activate', $user) }}">
+                                @csrf
+                                <x-button type="submit" variant="secondary" size="sm">{{ __('Reactivate') }}</x-button>
+                            </form>
+                        @endif
+                    @endcan
+                </div>
             </div>
 
             @error('status')

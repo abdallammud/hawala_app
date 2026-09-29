@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Users;
 
+use App\Enums\LedgerAccountType;
 use App\Enums\UserType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Users\StoreUserRequest;
 use App\Http\Requests\Users\UpdateUserRequest;
 use App\Models\AccountType;
 use App\Models\Branch;
+use App\Models\LedgerAccount;
 use App\Models\User;
+use App\Support\LedgerStatement;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -110,6 +113,39 @@ class UsersController extends Controller
         $user->syncRoles([$validated['role']]);
 
         return back()->with('status', __('Changes saved.'));
+    }
+
+    public function statement(Request $request, User $user): View
+    {
+        $this->authorize('view', $user);
+
+        $types = [
+            LedgerAccountType::AgentSend,
+            LedgerAccountType::AgentCredit,
+            LedgerAccountType::AgentPayout,
+            LedgerAccountType::AgentCommission,
+        ];
+
+        // Read-only: look up existing ledger accounts without lazily creating
+        // one just because someone viewed the page.
+        $accounts = LedgerAccount::query()
+            ->where('owner_type', $user->getMorphClass())
+            ->where('owner_id', $user->id)
+            ->whereIn('type', array_map(fn ($t) => $t->value, $types))
+            ->get()
+            ->keyBy(fn (LedgerAccount $a) => $a->type->value);
+
+        $active = LedgerAccountType::tryFrom($request->string('type')->toString()) ?? $types[0];
+        $activeAccount = $accounts->get($active->value);
+
+        return view('users.statement', [
+            'user' => $user,
+            'types' => $types,
+            'accounts' => $accounts,
+            'active' => $active,
+            'statement' => $activeAccount ? LedgerStatement::build($activeAccount) : null,
+            'closingBalance' => $activeAccount?->balance_cents ?? 0,
+        ]);
     }
 
     public function deactivate(User $user): RedirectResponse
