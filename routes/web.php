@@ -8,7 +8,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\Setup\AccountTypesController;
 use App\Http\Controllers\Setup\BranchesController;
+use App\Http\Controllers\Setup\CurrenciesController;
+use App\Http\Controllers\Setup\FeeTiersController;
+use App\Http\Controllers\Setup\SettingsController;
 use App\Http\Controllers\Setup\SetupController;
+use App\Http\Controllers\Transfers\TransferQuoteController;
 use App\Http\Controllers\Users\PayoutAccountsController;
 use App\Http\Controllers\Users\RolesController;
 use App\Http\Controllers\Users\UsersController;
@@ -71,6 +75,26 @@ Route::middleware('auth')->group(function () {
         Route::put('/{accountType}', [AccountTypesController::class, 'update'])->name('update');
         Route::post('/{accountType}/toggle', [AccountTypesController::class, 'toggle'])->name('toggle');
     });
+
+    Route::prefix('setup/currencies')->middleware('can:setup.currencies')->name('setup.currencies.')->group(function () {
+        Route::get('/', [CurrenciesController::class, 'index'])->name('index');
+        Route::put('/{currency}', [CurrenciesController::class, 'update'])->name('update');
+        Route::post('/fetch', [CurrenciesController::class, 'fetch'])->name('fetch');
+    });
+
+    Route::prefix('setup/fee-tiers')->middleware('can:setup.fees')->name('setup.fee-tiers.')->group(function () {
+        Route::get('/', [FeeTiersController::class, 'index'])->name('index');
+        Route::put('/', [FeeTiersController::class, 'update'])->name('update');
+        Route::post('/preview', [FeeTiersController::class, 'preview'])->name('preview');
+    });
+
+    Route::prefix('setup/settings')->middleware('can:setup.settings')->name('setup.settings.')->group(function () {
+        Route::get('/', [SettingsController::class, 'edit'])->name('edit');
+        Route::put('/', [SettingsController::class, 'update'])->name('update');
+    });
+
+    Route::post('/transfers/quote', TransferQuoteController::class)
+        ->middleware('can:transfers.create')->name('transfers.quote');
 
     // --- Balance requests ------------------------------------------------
     Route::middleware('can:balances.request')->group(function () {

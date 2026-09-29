@@ -621,8 +621,11 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
       rate fetching)
 - [x] Users CRUD (type, branch, role, commission overrides, credit limit), payout accounts,
       deactivate with balance check (`hasNonZeroBalances()` stubbed false until Phase 1 ledger lands)
-- [ ] Settings page (tabs), activity logging on all setup models — activity logging is live on
-      User/Branch/AccountType/PayoutAccount; Settings UI not built
+- [x] Settings page, activity logging on all setup models — the Settings screen was built in
+      Phase 4 (one page with sections rather than tabs; same coverage). Activity logging is live
+      on User/Branch/AccountType/PayoutAccount/CompanyAccount/FeeTier. Currency is deliberately
+      excluded: its primary key is the 3-letter code, and spatie/activitylog types
+      `activity_log.subject_id` as an integer, so logging it fails at insert.
 - [x] Policies + route middleware for everything above; tests that forbidden users get 403
 - **Done when:** super admin can set up the whole company from the UI.
   - Not yet — Users is done; Branches/Account Types/Currencies/Company Accounts/Settings/Roles
@@ -651,12 +654,22 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
   All items done, tested (91 tests), `hawala:verify-ledger` clean.
 
 ### Phase 4 — Rates, fees, commission
-- [ ] exchange_rates, providers, `hawala:fetch-rates`, manual override, RateService, stale handling
-- [ ] fee_tiers CRUD with validation + live preview, FeeCalculator (both modes, caps, min fee)
-- [ ] CommissionCalculator with resolution and caps
-- [ ] `POST /transfers/quote` endpoint
-- [ ] Tests: fee table in §5, commission examples, FX maths in §7 (margin 0 and margin 1%)
-- **Done when:** quote endpoint returns correct numbers for USD and EUR inputs.
+- [x] currencies + exchange_rates, FrankfurterProvider (primary, `api.frankfurter.dev/v1`)
+      and OpenErApiProvider (fallback), `hawala:fetch-rates` with automatic failover and a
+      once-per-day super-admin notification when both fail, manual override per currency,
+      RateService with stale handling, Currencies setup screen with a "fetch now" button
+- [x] fee_tiers editor with cross-row validation (starts at $0, no gaps/overlaps, exactly one
+      open-ended last tier) + live both-modes preview, FeeCalculator (whole + marginal, caps,
+      min fee, HALF_UP rounding)
+- [x] CommissionCalculator with user-override→settings resolution, flat caps flagged in the
+      snapshot, percent shares floored so the company takes the remainder
+- [x] `POST /transfers/quote` endpoint (permission-gated, friendly 422 on a stale rate)
+- [x] Settings screen (fees, commission, currency, payout, credit, receipts, general) — pulled
+      forward from Phase 3's checklist since Phase 4 introduced the settings that drive it
+- [x] Tests: fee table in §5 (both modes, capped and uncapped), commission examples from §6,
+      FX maths in §7 at margin 0 and margin 1%, provider failover, rate staleness
+- **Done when:** quote endpoint returns correct numbers for USD and EUR inputs. ✅
+  142 tests passing; verified against the live Frankfurter API (EUR ≈ $1.135, GBP ≈ $1.325).
 
 ### Phase 5 — Transfers & queue
 - [ ] transfers, cancellation_requests, transfer_collections migrations + models + code generator

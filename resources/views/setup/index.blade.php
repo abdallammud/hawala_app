@@ -19,17 +19,23 @@
             </x-card>
         @endcan
 
-        <x-card :title="__('Currencies')" :subtitle="__('Exchange rates and manual overrides.')">
-            <x-badge color="gold">{{ __('Coming in Phase 4') }}</x-badge>
-        </x-card>
+        @can('setup.currencies')
+            <x-card :title="__('Currencies')" :subtitle="__('Exchange rates and manual overrides.')">
+                <x-button :href="route('setup.currencies.index')" variant="secondary" size="sm">{{ __('Manage') }}</x-button>
+            </x-card>
+        @endcan
 
-        <x-card :title="__('Fee Tiers')" :subtitle="__('Fee rules with a live preview.')">
-            <x-badge color="gold">{{ __('Coming in Phase 4') }}</x-badge>
-        </x-card>
+        @can('setup.fees')
+            <x-card :title="__('Fee Tiers')" :subtitle="__('Fee rules with a live preview.')">
+                <x-button :href="route('setup.fee-tiers.index')" variant="secondary" size="sm">{{ __('Manage') }}</x-button>
+            </x-card>
+        @endcan
 
-        <x-card :title="__('Settings')" :subtitle="__('Fees, commission, currency, payout, credit, SMS, general.')">
-            <x-badge color="gold">{{ __('Coming in Phase 3') }}</x-badge>
-        </x-card>
+        @can('setup.settings')
+            <x-card :title="__('Settings')" :subtitle="__('Fees, commission, currency, payout, credit, general.')">
+                <x-button :href="route('setup.settings.edit')" variant="secondary" size="sm">{{ __('Manage') }}</x-button>
+            </x-card>
+        @endcan
 
         <x-card :title="__('SMS Templates')" :subtitle="__('Templates for each transfer event.')">
             <x-badge color="gold">{{ __('Coming in Phase 7') }}</x-badge>
