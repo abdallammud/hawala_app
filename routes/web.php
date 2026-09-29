@@ -12,7 +12,10 @@ use App\Http\Controllers\Setup\CurrenciesController;
 use App\Http\Controllers\Setup\FeeTiersController;
 use App\Http\Controllers\Setup\SettingsController;
 use App\Http\Controllers\Setup\SetupController;
+use App\Http\Controllers\Transfers\CancellationRequestsController;
+use App\Http\Controllers\Transfers\PayoutQueueController;
 use App\Http\Controllers\Transfers\TransferQuoteController;
+use App\Http\Controllers\Transfers\TransfersController;
 use App\Http\Controllers\Users\PayoutAccountsController;
 use App\Http\Controllers\Users\RolesController;
 use App\Http\Controllers\Users\UsersController;
@@ -93,8 +96,41 @@ Route::middleware('auth')->group(function () {
         Route::put('/', [SettingsController::class, 'update'])->name('update');
     });
 
+    // --- Transfers -----------------------------------------------------------
+    // Static segments before the {transfer} wildcard, same reasoning as
+    // company accounts above.
     Route::post('/transfers/quote', TransferQuoteController::class)
         ->middleware('can:transfers.create')->name('transfers.quote');
+
+    Route::middleware('can:transfers.create')->group(function () {
+        Route::get('/transfers/create', [TransfersController::class, 'create'])->name('transfers.create');
+        Route::post('/transfers', [TransfersController::class, 'store'])->name('transfers.store');
+    });
+
+    Route::get('/transfers', [TransfersController::class, 'index'])->name('transfers.index');
+
+    Route::middleware('can:transfers.approve_cancel')->group(function () {
+        Route::get('/cancellation-requests', [CancellationRequestsController::class, 'index'])->name('cancellation-requests.index');
+        Route::post('/cancellation-requests/{cancellationRequest}/approve', [CancellationRequestsController::class, 'approve'])->name('cancellation-requests.approve');
+        Route::post('/cancellation-requests/{cancellationRequest}/reject', [CancellationRequestsController::class, 'reject'])->name('cancellation-requests.reject');
+    });
+
+    Route::get('/transfers/{transfer}', [TransfersController::class, 'show'])->name('transfers.show');
+    Route::post('/transfers/{transfer}/cancel', [TransfersController::class, 'cancel'])->name('transfers.cancel');
+    Route::post('/transfers/{transfer}/request-cancel', [TransfersController::class, 'requestCancel'])->name('transfers.request-cancel');
+    Route::post('/transfers/{transfer}/approve-large', [TransfersController::class, 'approveLarge'])->name('transfers.approve-large');
+    Route::post('/transfers/{transfer}/reject-large', [TransfersController::class, 'rejectLarge'])->name('transfers.reject-large');
+    Route::post('/transfers/{transfer}/collections', [TransfersController::class, 'recordCollection'])->name('transfers.collections.store');
+
+    // --- Payout queue --------------------------------------------------------
+    Route::middleware('can:queue.view')->group(function () {
+        Route::get('/queue', [PayoutQueueController::class, 'index'])->name('queue.index');
+    });
+
+    Route::post('/queue/{transfer}/claim', [PayoutQueueController::class, 'claim'])->name('queue.claim');
+    Route::post('/queue/{transfer}/mark-paid', [PayoutQueueController::class, 'markPaid'])->name('queue.mark-paid');
+    Route::post('/queue/{transfer}/release', [PayoutQueueController::class, 'release'])->name('queue.release');
+    Route::post('/queue/{transfer}/force-assign', [PayoutQueueController::class, 'forceAssign'])->name('queue.force-assign');
 
     // --- Balance requests ------------------------------------------------
     Route::middleware('can:balances.request')->group(function () {
@@ -169,18 +205,6 @@ Route::middleware('auth')->group(function () {
         'phase' => $phase,
         'icon' => $icon,
     ]);
-
-    Route::get('/transfers/create', $placeholder(
-        __('New Transfer'), __('Record money a customer wants sent to Somalia.'), 5, 'plus-circle'
-    ))->middleware('can:transfers.create')->name('transfers.create');
-
-    Route::get('/transfers', $placeholder(
-        __('All Transfers'), __('Search, filter and export every transfer.'), 5, 'arrow-right-left'
-    ))->middleware('can:transfers.view_own')->name('transfers.index');
-
-    Route::get('/queue', $placeholder(
-        __('Payout Queue'), __('Branch queue for payout agents to claim and pay transfers.'), 5, 'inbox-stack'
-    ))->middleware('can:queue.view')->name('queue.index');
 
     Route::get('/reports', $placeholder(
         __('Reports'), __('Transfers, agent statements, uncollected, commissions, profit and more.'), 6, 'chart-bar'

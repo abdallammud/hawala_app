@@ -672,17 +672,27 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
   142 tests passing; verified against the live Frankfurter API (EUR ≈ $1.135, GBP ≈ $1.325).
 
 ### Phase 5 — Transfers & queue
-- [ ] transfers, cancellation_requests, transfer_collections migrations + models + code generator
-- [ ] Create form with live preview, confirmation step, idempotency, duplicate warning
-- [ ] Large transfer alert / hold + approval
-- [ ] Branch queue, claim, countdown, mark paid (payout account select, optional reference)
-- [ ] `hawala:expire-claims`, lazy expiry, admin notifications, force assign, unassign
-- [ ] Cancel (queued), cancellation requests (claimed), admin cancel, fee refund setting
-- [ ] Uncollected flag, record payment, fully collected
-- [ ] Transfer show page with timeline
-- [ ] Tests: full lifecycle, every status transition, guards, expiry, cancellation with refund on/off
+- [x] transfers, cancellation_requests, transfer_collections migrations + models + code generator
+      (`HW-XXXXX`, collision-checked)
+- [x] Create form with live preview (calls the Phase 4 quote endpoint), confirmation step showing
+      the collect amount in large type, idempotency via a per-form UUID, duplicate warning
+- [x] Large transfer alert / hold + approval; rejecting a held transfer always refunds in full
+      regardless of `fees.refund_on_cancel`
+- [x] Branch queue, claim (row-locked, balance-guarded), live countdown, mark paid with payout
+      account select and optional/required reference
+- [x] `hawala:expire-claims` (scheduled every minute, `withoutOverlapping`), lazy expiry on queue
+      page load, admin notifications, force assign, release/unassign
+- [x] Cancel (queued), cancellation requests (claimed), admin cancel, fee refund setting —
+      commission is always clawed back even when the company keeps the fee
+- [x] Uncollected flag, record payment (converts non-USD at the market rate), fully collected
+- [x] Transfer show page with timeline, commission split (admins only), uncollected register
+- [x] Tests: full lifecycle, every status transition, guards, expiry, cancellation with refund
+      on/off, plus the three `verify-ledger` transfer checks that were dormant until now
 - **Done when:** a transfer can go from London to paid in Mogadishu on a phone, and every
-  cancel/expiry path leaves the ledger correct.
+  cancel/expiry path leaves the ledger correct. ✅ 191 tests passing. Walked end to end in the
+  browser as two real users: Ali (London) sent $250, Farah (Mogadishu) claimed and paid it, and
+  the ledger landed exactly right — Ali −$262.50, Farah −$250.00, commission 6.25/1.25/5.00
+  against a $12.50 fee, transfers_payable back to 0, `hawala:verify-ledger` clean.
 
 ### Phase 6 — Dashboards & reports
 - [ ] Role dashboards (§11)

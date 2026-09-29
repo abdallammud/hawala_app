@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Sidebar structure. Each item's `permission` key will gate visibility once
- * spatie/laravel-permission roles are seeded (Phase 2). Until then the layout
- * renders every item so the full navigation shape can be reviewed.
+ * Sidebar structure. Each item is hidden unless the signed-in user holds its
+ * `permission`, and a group disappears entirely once all of its items are
+ * hidden (see partials/sidebar-nav.blade.php).
  */
 return [
     [
@@ -18,6 +18,7 @@ return [
             ['label' => 'New Transfer', 'route' => 'transfers.create', 'icon' => 'plus-circle', 'permission' => 'transfers.create'],
             ['label' => 'All Transfers', 'route' => 'transfers.index', 'icon' => 'arrow-right-left', 'permission' => 'transfers.view_own'],
             ['label' => 'Payout Queue', 'route' => 'queue.index', 'icon' => 'inbox-stack', 'permission' => 'queue.view'],
+            ['label' => 'Cancellations', 'route' => 'cancellation-requests.index', 'icon' => 'x-circle', 'permission' => 'transfers.approve_cancel'],
         ],
     ],
     [
