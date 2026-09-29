@@ -636,9 +636,11 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
       balance_requests columns for original_currency/original_amount_cents/rate already
       exist, forms are USD-only for now per spec)
 - [x] Company account statement + company transfers with charges
-- [ ] Manual adjustments UI — `adjustments.create`/`adjustments.approve` permissions are
-      seeded and `JournalType::ManualAdjustment` works (used directly in tests/seeders), but
-      there's no screen yet for an admin to create one through the UI. Still pending.
+- [x] Manual adjustments UI (`/adjustments`) — any two existing ledger accounts (including
+      all six system accounts, which the create form ensures exist even before first use, so
+      the canonical "seed an opening balance via Dr company / Cr adjustments" case from §4
+      works from day one), always maker ≠ checker (no admin-acts-directly shortcut here,
+      unlike balance requests — an adjustment always needs a separate approver)
 - [x] Notifications (database) for request status changes — submission notifies eligible
       approvers, decisions notify the requester/beneficiary
 - [x] Agent statement page (running balance) for each balance — reuses the same
@@ -646,8 +648,7 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
       creates a ledger account just because someone viewed the page)
 - [x] Tests for every kind, approvals, self-approval blocked
 - **Done when:** every balance moves correctly through the UI and verify-ledger passes. ✅
-  (manual adjustments UI is the one item still open — everything else is done, tested, and
-  `hawala:verify-ledger` is clean)
+  All items done, tested (91 tests), `hawala:verify-ledger` clean.
 
 ### Phase 4 — Rates, fees, commission
 - [ ] exchange_rates, providers, `hawala:fetch-rates`, manual override, RateService, stale handling

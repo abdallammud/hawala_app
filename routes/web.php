@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Balances\AdjustmentsController;
 use App\Http\Controllers\Balances\BalanceRequestsController;
 use App\Http\Controllers\Balances\CommissionController;
 use App\Http\Controllers\Balances\CompanyAccountsController;
@@ -115,6 +116,19 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:company_accounts.transfer')->group(function () {
         Route::get('/company-accounts-transfer', [CompanyAccountsController::class, 'transferCreate'])->name('company-accounts.transfer.create');
         Route::post('/company-accounts-transfer', [CompanyAccountsController::class, 'transferStore'])->name('company-accounts.transfer.store');
+    });
+
+    // --- Manual adjustments ---------------------------------------------------
+    Route::get('/adjustments', [AdjustmentsController::class, 'index'])->name('adjustments.index');
+
+    Route::middleware('can:adjustments.create')->group(function () {
+        Route::get('/adjustments/create', [AdjustmentsController::class, 'create'])->name('adjustments.create');
+        Route::post('/adjustments', [AdjustmentsController::class, 'store'])->name('adjustments.store');
+    });
+
+    Route::middleware('can:adjustments.approve')->group(function () {
+        Route::post('/adjustments/{adjustmentRequest}/approve', [AdjustmentsController::class, 'approve'])->name('adjustments.approve');
+        Route::post('/adjustments/{adjustmentRequest}/reject', [AdjustmentsController::class, 'reject'])->name('adjustments.reject');
     });
 
     // --- Notifications -------------------------------------------------------

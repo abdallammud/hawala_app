@@ -1,6 +1,11 @@
 <x-layouts.app :title="__('Company Accounts')">
     <x-card :padding="false">
         <x-slot:actions>
+            @canany(['adjustments.create', 'adjustments.approve'])
+                <x-button :href="route('adjustments.index')" variant="ghost" size="sm">
+                    {{ __('Adjustments') }}
+                </x-button>
+            @endcanany
             @can('company_accounts.transfer')
                 <x-button :href="route('company-accounts.transfer.create')" variant="secondary" size="sm">
                     {{ __('Move money') }}
