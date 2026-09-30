@@ -695,10 +695,35 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
   against a $12.50 fee, transfers_payable back to 0, `hawala:verify-ledger` clean.
 
 ### Phase 6 — Dashboards & reports
-- [ ] Role dashboards (§11)
-- [ ] All reports in §12 with filters, totals, scope, exports
-- [ ] Audit log viewer
-- **Done when:** admin can answer "how much did we make this month and who owes us" in one click each.
+- [x] Role dashboards (§11) — sending agent, payout agent, admin. Admin adds a "Needs attention"
+      panel (pending requests, awaiting approval, cancellations, expired claims, stale rates).
+      `DashboardService` reads balances read-only, so opening a dashboard never creates a
+      ledger account.
+- [x] All reports in §12 with filters, totals, scope, exports — 11 reports behind a small
+      framework (`App\Reports\Report` + `ReportRegistry` + `ReportFilters`), each declaring its
+      own permission, columns, money columns and filters. CSV export writes money as plain
+      decimals so spreadsheets parse it as a number.
+- [x] Audit log viewer — filters by user, subject type, event and date, with before/after diffs.
+      Gated on `audit.view`, which is **super-admin only** (`ADMIN_EXCLUDED`).
+- [x] `claim_expiries` table, so "claims that timed out" can be reported per agent — the
+      transfer row only keeps current state and loses `claimed_by` when the claim is returned.
+- **Done when:** admin can answer "how much did we make this month and who owes us" in one click
+  each. ✅ 226 tests passing. Verified live against the dev database as three real users: all 11
+  report pages, the audit log and all three dashboards render 200 with figures matching the
+  ledger (Ali send balance $1,737.50 / commission $6.25; Farah payout $1,750.00 / commission
+  $1.25; shares 6.25 + 1.25 + 5.00 against the $12.50 fee), and scope is enforced — Ali and
+  Farah get 403 on `reports/profit` and `audit-log`.
+
+Notes / deferred:
+- `CompanyAccount::ledgerAccount()` now resolves through the ledger's own `owner` morph columns
+  instead of the `ledger_account_id` FK. Only the create form ever populated that column, so a
+  company account made by a seeder or an import reported a $0 balance while really holding money.
+- **Decision needed:** the profit report counts every `manual_adjustment` as a P&L item, which is
+  right for a write-off but wrong for an opening-balance capital injection — one such entry in the
+  dev data swamps Net. Either post opening float against a dedicated equity/opening-balance
+  account, or exclude a marked subset from profit. Not changed here because BUILD.md §12 asks
+  for adjustments to be visible in profit.
+- 360 px check across every screen stays in Phase 7's final pass.
 
 ### Phase 7 — SMS, receipts, go-live
 - [ ] SMS drivers, templates CRUD, events, queued jobs, sms_logs, test send
@@ -706,6 +731,8 @@ Stop after each phase: tests green, Pint clean, tick boxes, commit, summarise, w
 - [ ] Scheduler entries (§14), backups configured to a remote disk (ask me which)
 - [ ] ProductionSeeder + DemoSeeder
 - [ ] `DEPLOY.md`: Hostinger steps (below) written for this project
+- [ ] Un-ignore `/public/build` in `.gitignore` and commit the built assets — CLAUDE.md requires
+      them shipped (no Node on the server), but Laravel's stock `.gitignore` excludes them
 - [ ] Final pass: N+1 check, indexes, 360 px check on every screen, `php artisan test` green
 - **Done when:** deployed to Hostinger and a one-week trial can start.
 

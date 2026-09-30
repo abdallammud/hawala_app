@@ -53,3 +53,15 @@ function makeAdmin(): User
 
     return $admin;
 }
+
+/**
+ * The admin role deliberately excludes audit.view, setup.roles,
+ * setup.settings and adjustments.approve — use this where those matter.
+ */
+function makeSuperAdmin(): User
+{
+    $superAdmin = User::factory()->create(['type' => UserType::Staff]);
+    $superAdmin->assignRole('super-admin');
+
+    return $superAdmin;
+}

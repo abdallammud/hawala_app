@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\Balances\AdjustmentsController;
 use App\Http\Controllers\Balances\BalanceRequestsController;
 use App\Http\Controllers\Balances\CommissionController;
 use App\Http\Controllers\Balances\CompanyAccountsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationsController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\Setup\AccountTypesController;
 use App\Http\Controllers\Setup\BranchesController;
 use App\Http\Controllers\Setup\CurrenciesController;
@@ -195,24 +197,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read', [NotificationsController::class, 'markRead'])->name('notifications.read');
 
-    // --- Placeholder screens -------------------------------------------------
-    // Each of these is replaced by a real controller + views as its BUILD.md
-    // phase is implemented. Kept here so the full navigation can be reviewed
-    // and clicked through before any single module is wired up.
-    $placeholder = fn (string $title, string $description, int $phase, string $icon) => fn () => view('placeholder', [
-        'title' => $title,
-        'description' => $description,
-        'phase' => $phase,
-        'icon' => $icon,
-    ]);
+    // --- Reports -------------------------------------------------------------
+    // Each report gates on its own permission inside the controller, so the
+    // index only needs to be reachable — it lists what the user may run.
+    Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
+    Route::get('/reports/{report}', [ReportsController::class, 'show'])->name('reports.show');
+    Route::get('/reports/{report}/export', [ReportsController::class, 'export'])->name('reports.export');
 
-    Route::get('/reports', $placeholder(
-        __('Reports'), __('Transfers, agent statements, uncollected, commissions, profit and more.'), 6, 'chart-bar'
-    ))->middleware('can:reports.agent_statement')->name('reports.index');
-
-    Route::get('/audit-log', $placeholder(
-        __('Audit Log'), __('Every important action: who, what, when, before and after.'), 2, 'shield-check'
-    ))->middleware('can:audit.view')->name('audit.index');
+    // --- Audit log -----------------------------------------------------------
+    Route::get('/audit-log', [AuditLogController::class, 'index'])
+        ->middleware('can:audit.view')->name('audit.index');
 });
 
 require __DIR__.'/auth.php';

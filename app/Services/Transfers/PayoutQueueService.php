@@ -7,6 +7,7 @@ use App\Enums\LedgerAccountType;
 use App\Enums\TransferStatus;
 use App\Exceptions\Ledger\InsufficientBalanceException;
 use App\Exceptions\Transfers\TransferStateException;
+use App\Models\ClaimExpiry;
 use App\Models\PayoutAccount;
 use App\Models\Transfer;
 use App\Models\User;
@@ -196,6 +197,14 @@ class PayoutQueueService
                 if ($fresh->status !== TransferStatus::Claimed || $fresh->claim_expires_at?->isFuture()) {
                     return false;
                 }
+
+                // Recorded before the claim is cleared, since returnToQueue
+                // wipes claimed_by — the §12 time-outs report needs it.
+                ClaimExpiry::create([
+                    'transfer_id' => $fresh->id,
+                    'user_id' => $fresh->claimed_by,
+                    'expired_at' => now(),
+                ]);
 
                 $this->returnToQueue($fresh);
 
