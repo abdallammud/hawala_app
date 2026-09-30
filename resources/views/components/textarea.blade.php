@@ -14,7 +14,7 @@ $hasError = $errors->has($name);
         name="{{ $name }}"
         rows="{{ $rows }}"
         {{ $attributes->merge([
-            'class' => 'block w-full rounded-lg border py-2.5 px-3.5 text-sm shadow-sm transition
+            'class' => 'block w-full rounded-lg border py-3 text-base sm:py-2.5 sm:text-sm px-3.5 shadow-sm transition
                 focus:outline-none focus:ring-2 focus:ring-offset-0
                 '.($hasError
                     ? 'border-red-400 text-red-900 focus:border-red-500 focus:ring-red-200'

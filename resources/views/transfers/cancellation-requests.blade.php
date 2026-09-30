@@ -5,7 +5,7 @@
 
     <x-card :padding="false">
         <div class="p-5 border-b border-slate-100">
-            <form method="GET" class="flex gap-3">
+            <form method="GET" class="flex flex-col sm:flex-row gap-3">
                 <x-select name="status" :options="$statuses" placeholder="{{ __('All (pending first)') }}" :value="request('status')" class="sm:w-56" />
                 <x-button type="submit" variant="secondary">{{ __('Filter') }}</x-button>
                 @if (request()->hasAny('status'))

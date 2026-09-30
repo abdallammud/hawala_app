@@ -44,7 +44,7 @@ return [
     ],
 
     'general' => [
-        'company_name' => 'Hawala',
+        'company_name' => 'Blue Star',
         'timezone' => 'Africa/Mogadishu',
         'duplicate_warning_minutes' => 10,
     ],

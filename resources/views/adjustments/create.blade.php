@@ -9,7 +9,7 @@
                 <x-input name="amount" label="{{ __('Amount ($)') }}" type="number" min="0.01" step="0.01" prefix="$" />
                 <x-textarea name="reason" label="{{ __('Reason') }}" hint="{{ __('Required — shown to the approver and kept on the record.') }}" />
 
-                <div class="flex justify-end gap-3">
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                     <x-button :href="route('adjustments.index')" variant="ghost">{{ __('Back') }}</x-button>
                     <x-button type="submit">{{ __('Submit for approval') }}</x-button>
                 </div>

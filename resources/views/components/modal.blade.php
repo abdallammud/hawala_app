@@ -44,7 +44,10 @@ $widths = [
         >
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <h3 class="text-sm font-semibold text-slate-900">{{ $title }}</h3>
-                <button type="button" x-on:click="open = false" class="text-slate-400 hover:text-slate-600">
+                {{-- Negative margin keeps it visually in place while the padding
+                     gives the icon a real tap target. --}}
+                <button type="button" x-on:click="open = false" aria-label="{{ __('Close') }}"
+                    class="-m-2 p-2 shrink-0 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100">
                     <x-icon name="x-mark" class="w-5 h-5" />
                 </button>
             </div>

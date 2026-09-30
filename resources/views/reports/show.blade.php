@@ -26,37 +26,37 @@
         <div class="p-5 border-b border-slate-100">
             <form method="GET" class="flex flex-wrap gap-3 items-end">
                 @if (in_array('from', $available))
-                    <div class="w-40">
+                    <div class="w-full sm:w-40">
                         <x-input name="from" label="{{ __('From') }}" type="date" :value="$filters->from->toDateString()" />
                     </div>
                 @endif
                 @if (in_array('to', $available))
-                    <div class="w-40">
+                    <div class="w-full sm:w-40">
                         <x-input name="to" label="{{ __('To') }}" type="date" :value="$filters->to->toDateString()" />
                     </div>
                 @endif
                 @if (in_array('branch', $available))
-                    <div class="w-44">
+                    <div class="w-full sm:w-44">
                         <x-select name="branch_id" label="{{ __('Branch') }}" :options="$options['branches']" placeholder="{{ __('All branches') }}" :value="$filters->branchId" />
                     </div>
                 @endif
                 @if (in_array('agent', $available))
-                    <div class="w-48">
+                    <div class="w-full sm:w-48">
                         <x-select name="agent_id" label="{{ __('Agent') }}" :options="$options['agents']" placeholder="{{ __('All agents') }}" :value="$filters->agentId" />
                     </div>
                 @endif
                 @if (in_array('status', $available))
-                    <div class="w-44">
+                    <div class="w-full sm:w-44">
                         <x-select name="status" label="{{ __('Status') }}" :options="$options['statuses']" placeholder="{{ __('All statuses') }}" :value="$filters->status" />
                     </div>
                 @endif
                 @if (in_array('account_type', $available))
-                    <div class="w-48">
+                    <div class="w-full sm:w-48">
                         <x-select name="account_type" label="{{ __('Balance') }}" :options="$options['accountTypes']" :value="$filters->accountType" />
                     </div>
                 @endif
                 @if (in_array('group_by', $available))
-                    <div class="w-36">
+                    <div class="w-full sm:w-36">
                         <x-select name="group_by" label="{{ __('Group by') }}" :options="$options['groupBy']" :value="$filters->groupBy ?? 'day'" />
                     </div>
                 @endif

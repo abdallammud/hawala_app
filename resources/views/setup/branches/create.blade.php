@@ -7,7 +7,7 @@
                 <x-input name="name" label="{{ __('Name') }}" autofocus />
                 <x-input name="city" label="{{ __('City') }}" />
 
-                <div class="flex justify-end gap-3">
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                     <x-button :href="route('setup.branches.index')" variant="ghost">{{ __('Back') }}</x-button>
                     <x-button type="submit">{{ __('Create branch') }}</x-button>
                 </div>

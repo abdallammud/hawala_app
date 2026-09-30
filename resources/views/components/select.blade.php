@@ -14,7 +14,7 @@ $selected = old($name, $value);
         id="{{ $name }}"
         name="{{ $name }}"
         {{ $attributes->merge([
-            'class' => 'block w-full rounded-lg border py-2.5 pl-3.5 pr-10 text-sm shadow-sm transition
+            'class' => 'block w-full rounded-lg border py-3 text-base sm:py-2.5 sm:text-sm pl-3.5 pr-10 shadow-sm transition
                 focus:outline-none focus:ring-2 focus:ring-offset-0
                 '.($hasError
                     ? 'border-red-400 text-red-900 focus:border-red-500 focus:ring-red-200'

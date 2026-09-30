@@ -2,11 +2,11 @@
     <x-card :padding="false">
         <div class="p-5 border-b border-slate-100">
             <form method="GET" class="flex flex-wrap gap-3 items-end">
-                <div class="w-40"><x-input name="from" label="{{ __('From') }}" type="date" :value="request('from')" /></div>
-                <div class="w-40"><x-input name="to" label="{{ __('To') }}" type="date" :value="request('to')" /></div>
-                <div class="w-48"><x-select name="user_id" label="{{ __('User') }}" :options="$users" placeholder="{{ __('Anyone') }}" :value="request('user_id')" /></div>
-                <div class="w-44"><x-select name="subject_type" label="{{ __('Record type') }}" :options="$subjectTypes" placeholder="{{ __('Any type') }}" :value="request('subject_type')" /></div>
-                <div class="w-36"><x-select name="event" label="{{ __('Event') }}" :options="$events" placeholder="{{ __('Any event') }}" :value="request('event')" /></div>
+                <div class="w-full sm:w-40"><x-input name="from" label="{{ __('From') }}" type="date" :value="request('from')" /></div>
+                <div class="w-full sm:w-40"><x-input name="to" label="{{ __('To') }}" type="date" :value="request('to')" /></div>
+                <div class="w-full sm:w-48"><x-select name="user_id" label="{{ __('User') }}" :options="$users" placeholder="{{ __('Anyone') }}" :value="request('user_id')" /></div>
+                <div class="w-full sm:w-44"><x-select name="subject_type" label="{{ __('Record type') }}" :options="$subjectTypes" placeholder="{{ __('Any type') }}" :value="request('subject_type')" /></div>
+                <div class="w-full sm:w-36"><x-select name="event" label="{{ __('Event') }}" :options="$events" placeholder="{{ __('Any event') }}" :value="request('event')" /></div>
                 <x-button type="submit" variant="secondary">{{ __('Filter') }}</x-button>
                 @if (request()->hasAny(['from', 'to', 'user_id', 'subject_type', 'event']))
                     <x-button :href="route('audit.index')" variant="ghost">{{ __('Clear') }}</x-button>

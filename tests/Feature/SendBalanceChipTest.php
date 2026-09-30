@@ -6,6 +6,7 @@ use App\Models\LedgerAccount;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Notification;
+use Spatie\Permission\Models\Role;
 use Tests\Feature\Transfers\TransferTestHelpers as H;
 
 beforeEach(function () {
@@ -37,12 +38,41 @@ it('shows it to an admin who also sends, not only to sending agents', function (
         ->assertSee('$500.00');
 });
 
-it('hides it from back-office staff who never send', function () {
+it('shows zero to an admin who has not been topped up yet', function () {
+    // Admins hold transfers.create, so they send and therefore need the
+    // figure — showing nothing made it look broken when logging in as admin.
     $admin = makeAdmin();
 
-    expect($admin->sendBalanceCents())->toBeNull();
+    expect($admin->can('transfers.create'))->toBeTrue()
+        ->and($admin->sendBalanceCents())->toBe(0);
 
     $this->actingAs($admin)->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Send balance')
+        ->assertSee('$0.00');
+});
+
+it('hides it from a payout agent, who can never send', function () {
+    $payer = H::payoutAgent($this->branch, fundCents: 50000);
+
+    expect($payer->can('transfers.create'))->toBeFalse()
+        ->and($payer->sendBalanceCents())->toBeNull();
+
+    $this->actingAs($payer)->get(route('dashboard'))
+        ->assertOk()
+        ->assertDontSee('Send balance');
+});
+
+it('hides it from staff with no send permission at all', function () {
+    $role = Role::create(['name' => 'viewer']);
+    $role->syncPermissions(['dashboard.view']);
+
+    $staff = User::factory()->create(['type' => UserType::Staff]);
+    $staff->assignRole($role);
+
+    expect($staff->sendBalanceCents())->toBeNull();
+
+    $this->actingAs($staff)->get(route('dashboard'))
         ->assertOk()
         ->assertDontSee('Send balance');
 });

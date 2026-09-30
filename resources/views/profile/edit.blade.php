@@ -10,7 +10,7 @@
                 <x-input name="email" label="{{ __('Email') }}" type="email" :value="$user->email" />
                 <x-input name="phone" label="{{ __('Phone') }}" :value="$user->phone" hint="{{ __('Used to log in as an alternative to email.') }}" />
 
-                <div class="flex justify-end gap-3">
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                     <x-button :href="route('dashboard')" variant="ghost">{{ __('Back') }}</x-button>
                     <x-button type="submit">{{ __('Save changes') }}</x-button>
                 </div>

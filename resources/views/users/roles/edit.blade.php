@@ -22,7 +22,7 @@
                     @include('users.roles._permissions-fieldset', ['groupedPermissions' => $groupedPermissions, 'selected' => old('permissions', $role->permissions->pluck('name')->all())])
                 </div>
 
-                <div class="flex justify-end gap-3">
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                     <x-button :href="route('roles.index')" variant="ghost">{{ __('Back') }}</x-button>
                     <x-button type="submit">{{ __('Save changes') }}</x-button>
                 </div>

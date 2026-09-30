@@ -86,9 +86,14 @@ class User extends Authenticatable
     private int|null|false $sendBalanceMemo = false;
 
     /**
-     * Send balance in cents, or null when this user isn't someone who sends —
-     * so the topbar shows the figure to every sending agent (admin or not)
-     * without putting a meaningless $0.00 in front of back-office staff.
+     * Send balance in cents, or null when this user is not someone who sends.
+     *
+     * "Everyone who sends needs balance" (BUILD.md §1) — and admins hold
+     * `transfers.create` too, so an admin who sends draws on their own send
+     * balance exactly like an agent. Anyone who can create a transfer
+     * therefore sees the figure, showing $0.00 before their first top-up
+     * rather than hiding it; only people who can never send (payout agents,
+     * back-office staff without the permission) get null.
      *
      * Read-only on purpose: looking at a page must never create an account.
      * Memoised because the layout renders it on every request.
@@ -105,11 +110,13 @@ class User extends Authenticatable
             ->where('owner_id', $this->id)
             ->value('balance_cents');
 
-        // No account yet: still show it to a sending agent (they will have one
-        // the moment they are topped up), but not to anyone else.
-        return $this->sendBalanceMemo = $cents === null && $this->type !== UserType::SendingAgent
-            ? null
-            : (int) ($cents ?? 0);
+        if ($cents !== null) {
+            return $this->sendBalanceMemo = (int) $cents;
+        }
+
+        $sends = $this->type === UserType::SendingAgent || $this->can('transfers.create');
+
+        return $this->sendBalanceMemo = $sends ? 0 : null;
     }
 
     public function getActivitylogOptions(): LogOptions

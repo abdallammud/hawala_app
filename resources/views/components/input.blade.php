@@ -19,7 +19,10 @@ $hasError = $errors->has($name);
             name="{{ $name }}"
             type="{{ $type }}"
             {{ $attributes->merge([
-                'class' => 'block w-full rounded-lg border py-2.5 text-sm shadow-sm transition
+                // text-base on a phone is deliberate: iOS Safari zooms the whole
+                // page when you focus an input smaller than 16px. py-3 keeps the
+                // tap target at 44px for agents working at a counter.
+                'class' => 'block w-full rounded-lg border py-3 text-base sm:py-2.5 sm:text-sm shadow-sm transition
                     focus:outline-none focus:ring-2 focus:ring-offset-0
                     '.($prefix ? 'pl-8' : 'pl-3.5').' pr-3.5 '.
                     ($hasError

@@ -143,14 +143,14 @@
             {{-- Confirmation step: the amount is shown large before the final submit. --}}
             <x-card>
                 <template x-if="quote && !confirming">
-                    <div class="flex justify-end gap-3">
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                         <x-button :href="route('transfers.index')" variant="ghost">{{ __('Back') }}</x-button>
                         <x-button type="button" x-on:click="confirming = true">{{ __('Review') }}</x-button>
                     </div>
                 </template>
 
                 <template x-if="!quote">
-                    <div class="flex justify-end gap-3">
+                    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                         <x-button :href="route('transfers.index')" variant="ghost">{{ __('Back') }}</x-button>
                         <x-button type="button" disabled>{{ __('Review') }}</x-button>
                     </div>
@@ -166,7 +166,7 @@
                                 <span class="font-medium text-slate-700" x-text="money(quote.amount_cents)"></span>
                             </p>
                         </div>
-                        <div class="flex justify-end gap-3">
+                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                             <x-button type="button" variant="ghost" x-on:click="confirming = false">{{ __('Edit') }}</x-button>
                             <x-button type="submit" size="lg">{{ __('Send transfer') }}</x-button>
                         </div>

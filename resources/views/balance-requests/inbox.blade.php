@@ -7,7 +7,7 @@
 
     <x-card :padding="false">
         <div class="p-5 border-b border-slate-100">
-            <form method="GET" class="flex gap-3">
+            <form method="GET" class="flex flex-col sm:flex-row gap-3">
                 <x-select name="status" :options="['pending' => __('Pending'), 'approved' => __('Approved'), 'rejected' => __('Rejected')]" placeholder="{{ __('All statuses (pending first)') }}" :value="request('status')" class="sm:w-56" />
                 <x-button type="submit" variant="secondary">{{ __('Filter') }}</x-button>
                 @if (request()->hasAny('status'))
@@ -52,7 +52,7 @@
                                             <x-alert type="warning">
                                                 {{ __('Has the money arrived in a company account? If not, reject this and ask the agent to request credit instead.') }}
                                             </x-alert>
-                                            <div class="flex justify-end gap-3">
+                                            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                                                 <x-button type="submit">{{ __('Yes, approve') }}</x-button>
                                             </div>
                                         </form>
@@ -71,7 +71,7 @@
                                     <form method="POST" action="{{ route('balance-requests.reject', $req) }}" class="space-y-4">
                                         @csrf
                                         <x-textarea name="reason" label="{{ __('Reason') }}" />
-                                        <div class="flex justify-end gap-3">
+                                        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                                             <x-button type="submit" variant="danger">{{ __('Reject request') }}</x-button>
                                         </div>
                                     </form>

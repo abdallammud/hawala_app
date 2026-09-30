@@ -174,7 +174,7 @@ Every payout agent gets `agent_payout` and `agent_commission`. System accounts
 | `sms.driver` | enum `log` / `http` | log | |
 | `sms.http` | json | {} | url, method, headers, param mapping, sender id |
 | `receipts.enabled` | bool | false | |
-| `general.company_name` | string | "Hawala" | |
+| `general.company_name` | string | "Blue Star" | |
 | `general.timezone` | string | Africa/Mogadishu | |
 | `general.duplicate_warning_minutes` | int | 10 | |
 

@@ -52,7 +52,7 @@
                                 @endif
                             </div>
 
-                            <div class="flex items-center gap-3 shrink-0">
+                            <div class="flex items-center gap-3 shrink-0 w-full sm:w-auto">
                                 @if ($transfer->claim_expires_at)
                                     <span class="text-sm font-mono" :class="urgent ? 'text-red-600 font-semibold' : 'text-slate-500'">
                                         <span x-text="label"></span>
@@ -60,7 +60,7 @@
                                 @endif
 
                                 @can('markPaid', $transfer)
-                                    <x-button type="button" size="sm"
+                                    <x-button type="button" size="sm" class="flex-1 sm:flex-none"
                                         x-data x-on:click="$dispatch('open-modal', 'pay-{{ $transfer->id }}')">
                                         {{ __('Mark paid') }}
                                     </x-button>
@@ -135,11 +135,11 @@
                             </p>
                         </div>
 
-                        <div class="flex items-center gap-3 shrink-0">
+                        <div class="flex items-center gap-3 shrink-0 w-full sm:w-auto">
                             @can('claim', $transfer)
-                                <form method="POST" action="{{ route('queue.claim', $transfer) }}">
+                                <form method="POST" action="{{ route('queue.claim', $transfer) }}" class="flex-1 sm:flex-none">
                                     @csrf
-                                    <x-button type="submit" size="sm">{{ __('Claim') }}</x-button>
+                                    <x-button type="submit" size="sm" class="w-full sm:w-auto">{{ __('Claim') }}</x-button>
                                 </form>
                             @endcan
 

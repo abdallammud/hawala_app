@@ -8,7 +8,7 @@
                 <x-input name="name" label="{{ __('Name') }}" :value="$branch->name" />
                 <x-input name="city" label="{{ __('City') }}" :value="$branch->city" />
 
-                <div class="flex justify-end gap-3">
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                     <x-button :href="route('setup.branches.index')" variant="ghost">{{ __('Back') }}</x-button>
                     <x-button type="submit">{{ __('Save changes') }}</x-button>
                 </div>

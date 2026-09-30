@@ -18,7 +18,7 @@
 
                 <x-textarea name="note" label="{{ __('Note') }}" hint="{{ __('Optional context for the approver.') }}" />
 
-                <div class="flex justify-end gap-3">
+                <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                     <x-button :href="route('balance-requests.index')" variant="ghost">{{ __('Back') }}</x-button>
                     <x-button type="submit">{{ __('Submit request') }}</x-button>
                 </div>

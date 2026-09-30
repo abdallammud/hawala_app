@@ -15,12 +15,17 @@
         @endcan
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <x-stat label="{{ __('Send balance') }}" :value="\App\Support\Money::format($data['send_balance'])" icon="wallet" tone="brand" />
-        <x-stat label="{{ __('Credit owed') }}" :value="\App\Support\Money::format($data['credit_owed'])" icon="banknotes" :tone="$data['credit_owed'] > 0 ? 'red' : 'slate'" />
-        <x-stat label="{{ __('Commission') }}" :value="\App\Support\Money::format($data['commission'])" icon="gift" tone="gold" />
-        <x-stat label="{{ __('Uncollected') }}" :value="\App\Support\Money::format($data['uncollected'])" icon="exclamation-triangle" :tone="$data['uncollected'] > 0 ? 'amber' : 'slate'" />
-    </div>
+    {{-- Any staff user lands on this dashboard, so the sending balances are
+         shown only to someone who actually sends — the same test the topbar
+         chip uses. A viewer role would otherwise see four meaningless $0.00s. --}}
+    @if (auth()->user()->sendBalanceCents() !== null)
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <x-stat label="{{ __('Send balance') }}" :value="\App\Support\Money::format($data['send_balance'])" icon="wallet" tone="brand" />
+            <x-stat label="{{ __('Credit owed') }}" :value="\App\Support\Money::format($data['credit_owed'])" icon="banknotes" :tone="$data['credit_owed'] > 0 ? 'red' : 'slate'" />
+            <x-stat label="{{ __('Commission') }}" :value="\App\Support\Money::format($data['commission'])" icon="gift" tone="gold" />
+            <x-stat label="{{ __('Uncollected') }}" :value="\App\Support\Money::format($data['uncollected'])" icon="exclamation-triangle" :tone="$data['uncollected'] > 0 ? 'amber' : 'slate'" />
+        </div>
+    @endif
 
     <x-card :title="__('Recent transfers')" :padding="false">
         <x-slot:actions>
