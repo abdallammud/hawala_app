@@ -4,9 +4,11 @@ namespace App\Services\Transfers;
 
 use App\Enums\JournalType;
 use App\Enums\LedgerAccountType;
+use App\Enums\SmsEvent;
 use App\Enums\TransferStatus;
 use App\Exceptions\Ledger\InsufficientBalanceException;
 use App\Exceptions\Transfers\TransferStateException;
+use App\Jobs\SendTemplatedSms;
 use App\Models\ClaimExpiry;
 use App\Models\PayoutAccount;
 use App\Models\Transfer;
@@ -92,7 +94,7 @@ class PayoutQueueService
             throw new TransferStateException(__('A payment reference is required.'));
         }
 
-        return DB::transaction(function () use ($transfer, $payer, $payoutAccount, $reference) {
+        $paid = DB::transaction(function () use ($transfer, $payer, $payoutAccount, $reference) {
             $fresh = Transfer::query()->whereKey($transfer->id)->lockForUpdate()->firstOrFail();
 
             if ($fresh->status !== TransferStatus::Claimed) {
@@ -143,6 +145,10 @@ class PayoutQueueService
 
             return $fresh;
         });
+
+        SendTemplatedSms::dispatch(SmsEvent::TransferPaid, $paid->id);
+
+        return $paid;
     }
 
     /** Admin assigns a queued transfer directly to a payout agent. */
@@ -216,6 +222,14 @@ class PayoutQueueService
 
                 User::permission('queue.force_assign')
                     ->each(fn (User $admin) => $admin->notify(new ClaimExpired($transfer, $agentName)));
+
+                // The transfer row has already lost claimed_by, so the agent's
+                // number is passed explicitly.
+                SendTemplatedSms::dispatch(
+                    SmsEvent::ClaimExpired,
+                    $transfer->id,
+                    overrideRecipients: array_filter([$transfer->claimedBy?->phone]),
+                );
             }
         }
 

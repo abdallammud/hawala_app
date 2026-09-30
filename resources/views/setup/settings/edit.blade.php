@@ -55,6 +55,36 @@
             </div>
         </x-card>
 
+        <x-card :title="__('SMS')" :subtitle="__('Nothing is sent until this is on and the individual template is active.')">
+            <div class="space-y-5">
+                <x-checkbox name="sms_enabled" label="{{ __('Send SMS messages') }}" :checked="$settings['sms']['enabled']" />
+
+                <div class="max-w-xs">
+                    <x-select
+                        name="sms_driver"
+                        label="{{ __('Driver') }}"
+                        :options="['log' => __('Log only (write to the log file)'), 'http' => __('HTTP gateway')]"
+                        :value="$settings['sms']['driver']"
+                    />
+                </div>
+
+                <x-textarea
+                    name="sms_http"
+                    label="{{ __('HTTP gateway configuration (JSON)') }}"
+                    :rows="8"
+                    :value="old('sms_http', json_encode($settings['sms']['http'] ?: new stdClass, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))"
+                    hint="{{ __('Keys: url, method, send_as (form/json/query), sender_id, headers, params, success_contains. Use {to}, {message} and {sender_id} inside values.') }}"
+                />
+
+                <div class="flex items-center gap-3">
+                    <x-button :href="route('setup.sms-templates.index')" variant="secondary" size="sm">
+                        {{ __('Edit templates') }}
+                    </x-button>
+                    <p class="text-xs text-slate-500">{{ __('Templates are where the message text and recipients live.') }}</p>
+                </div>
+            </div>
+        </x-card>
+
         <x-card :title="__('Receipts')">
             <x-checkbox name="receipts_enabled" label="{{ __('Enable transfer receipt PDFs') }}" :checked="$settings['receipts']['enabled']" />
         </x-card>

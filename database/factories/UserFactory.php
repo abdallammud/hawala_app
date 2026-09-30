@@ -28,6 +28,10 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            // Agents are reachable by SMS, and users can log in by phone, so
+            // the default factory user has one. The column stays nullable:
+            // back-office staff may have only an email.
+            'phone' => '+2526'.fake()->unique()->numerify('########'),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),

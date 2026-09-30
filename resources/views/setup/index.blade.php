@@ -37,9 +37,11 @@
             </x-card>
         @endcan
 
-        <x-card :title="__('SMS Templates')" :subtitle="__('Templates for each transfer event.')">
-            <x-badge color="gold">{{ __('Coming in Phase 7') }}</x-badge>
-        </x-card>
+        @can('setup.sms')
+            <x-card :title="__('SMS Templates')" :subtitle="__('Templates for each transfer event.')">
+                <x-button :href="route('setup.sms-templates.index')" variant="secondary" size="sm">{{ __('Manage') }}</x-button>
+            </x-card>
+        @endcan
 
     </div>
 </x-layouts.app>

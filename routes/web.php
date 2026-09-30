@@ -14,6 +14,7 @@ use App\Http\Controllers\Setup\CurrenciesController;
 use App\Http\Controllers\Setup\FeeTiersController;
 use App\Http\Controllers\Setup\SettingsController;
 use App\Http\Controllers\Setup\SetupController;
+use App\Http\Controllers\Setup\SmsTemplatesController;
 use App\Http\Controllers\Transfers\CancellationRequestsController;
 use App\Http\Controllers\Transfers\PayoutQueueController;
 use App\Http\Controllers\Transfers\TransferQuoteController;
@@ -93,6 +94,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/preview', [FeeTiersController::class, 'preview'])->name('preview');
     });
 
+    Route::prefix('setup/sms-templates')->middleware('can:setup.sms')->name('setup.sms-templates.')->group(function () {
+        Route::get('/', [SmsTemplatesController::class, 'index'])->name('index');
+        Route::get('/{smsTemplate}/edit', [SmsTemplatesController::class, 'edit'])->name('edit');
+        Route::put('/{smsTemplate}', [SmsTemplatesController::class, 'update'])->name('update');
+        Route::post('/{smsTemplate}/test', [SmsTemplatesController::class, 'test'])->name('test');
+    });
+
     Route::prefix('setup/settings')->middleware('can:setup.settings')->name('setup.settings.')->group(function () {
         Route::get('/', [SettingsController::class, 'edit'])->name('edit');
         Route::put('/', [SettingsController::class, 'update'])->name('update');
@@ -118,6 +126,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/transfers/{transfer}', [TransfersController::class, 'show'])->name('transfers.show');
+    Route::get('/transfers/{transfer}/receipt', [TransfersController::class, 'receipt'])->name('transfers.receipt');
     Route::post('/transfers/{transfer}/cancel', [TransfersController::class, 'cancel'])->name('transfers.cancel');
     Route::post('/transfers/{transfer}/request-cancel', [TransfersController::class, 'requestCancel'])->name('transfers.request-cancel');
     Route::post('/transfers/{transfer}/approve-large', [TransfersController::class, 'approveLarge'])->name('transfers.approve-large');

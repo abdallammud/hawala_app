@@ -30,6 +30,26 @@
                         <p class="text-xs text-slate-500">{{ __('to :branch', ['branch' => $transfer->branch->name]) }}</p>
                     </div>
                 </div>
+
+                {{-- Receipts stay hidden until an admin turns receipts.enabled on. --}}
+                @if ($receipts->enabled())
+                    <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
+                        <x-button :href="route('transfers.receipt', $transfer)" variant="secondary" size="sm">
+                            <x-icon name="document-text" class="w-4 h-4" />
+                            {{ __('Download receipt') }}
+                        </x-button>
+                        <x-button
+                            :href="$receipts->whatsappUrl($transfer)"
+                            variant="secondary"
+                            size="sm"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            <x-icon name="chat-bubble-left-right" class="w-4 h-4" />
+                            {{ __('Share via WhatsApp') }}
+                        </x-button>
+                    </div>
+                @endif
             </x-card>
 
             <x-card :title="__('Parties')">

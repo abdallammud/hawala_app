@@ -4,7 +4,9 @@ namespace App\Services\Transfers;
 
 use App\Enums\JournalType;
 use App\Enums\LedgerAccountType;
+use App\Enums\SmsEvent;
 use App\Enums\TransferStatus;
+use App\Jobs\SendTemplatedSms;
 use App\Models\Branch;
 use App\Models\LedgerAccount;
 use App\Models\Transfer;
@@ -96,6 +98,16 @@ class TransferService
             User::permission('transfers.approve_large')
                 ->where('id', '!=', $agent->id)
                 ->each(fn (User $admin) => $admin->notify(new LargeTransferCreated($transfer)));
+
+            SendTemplatedSms::dispatch(SmsEvent::LargeTransfer, $transfer->id);
+        }
+
+        // Dispatched after the transaction commits, so the job never reads a
+        // transfer that is still uncommitted or about to be rolled back.
+        // Only once it is really on its way: a transfer held for approval
+        // must not tell the receiver their money has been sent.
+        if ($transfer->status === TransferStatus::Queued) {
+            SendTemplatedSms::dispatch(SmsEvent::TransferSent, $transfer->id);
         }
 
         return $transfer;

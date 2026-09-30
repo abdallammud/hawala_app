@@ -6,8 +6,10 @@ use App\Enums\BalanceRequestKind;
 use App\Enums\BalanceRequestStatus;
 use App\Enums\JournalType;
 use App\Enums\LedgerAccountType;
+use App\Enums\SmsEvent;
 use App\Exceptions\Balances\MaxCreditExceededException;
 use App\Exceptions\Balances\SelfApprovalException;
+use App\Jobs\SendTemplatedSms;
 use App\Models\BalanceRequest;
 use App\Models\CompanyAccount;
 use App\Models\JournalEntry;
@@ -15,6 +17,7 @@ use App\Models\User;
 use App\Notifications\BalanceRequestDecided;
 use App\Notifications\BalanceRequestSubmitted;
 use App\Services\Ledger\LedgerService;
+use App\Support\Money;
 use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -137,7 +140,7 @@ class BalanceRequestService
 
     private function finalizeApproval(BalanceRequest $request, User $decider, ?string $note): BalanceRequest
     {
-        return DB::transaction(function () use ($request, $decider, $note) {
+        $approved = DB::transaction(function () use ($request, $decider, $note) {
             $entry = $this->postLedgerEntry($request, $decider);
 
             $request->update([
@@ -152,6 +155,22 @@ class BalanceRequestService
 
             return $request;
         });
+
+        // Only a balance top-up is worth an SMS; commission moves and
+        // withdrawals are agent-side bookkeeping.
+        if (in_array($approved->kind, [BalanceRequestKind::TopupPaid, BalanceRequestKind::TopupCredit], true)) {
+            SendTemplatedSms::dispatch(
+                SmsEvent::TopupApproved,
+                extraValues: [
+                    'agent_name' => $approved->user->name,
+                    'amount_usd' => Money::format($approved->amount_cents),
+                    'date' => now()->format('Y-m-d H:i'),
+                ],
+                overrideRecipients: array_filter([$approved->user->phone]),
+            );
+        }
+
+        return $approved;
     }
 
     private function notifyDecision(BalanceRequest $request): void

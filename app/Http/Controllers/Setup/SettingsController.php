@@ -44,6 +44,10 @@ class SettingsController extends Controller
 
             'credit_default_max' => ['nullable', 'numeric', 'min:0'],
 
+            'sms_enabled' => ['boolean'],
+            'sms_driver' => ['required', 'in:log,http'],
+            'sms_http' => ['nullable', 'string', 'json'],
+
             'receipts_enabled' => ['boolean'],
 
             'general_company_name' => ['required', 'string', 'max:255'],
@@ -73,6 +77,12 @@ class SettingsController extends Controller
         Settings::set('payout.reference_required', $request->boolean('payout_reference_required'), $updatedBy);
 
         Settings::set('credit.default_max_cents', $request->filled('credit_default_max') ? Money::parseCents((string) $validated['credit_default_max']) : null, $updatedBy);
+
+        Settings::set('sms.enabled', $request->boolean('sms_enabled'), $updatedBy);
+        Settings::set('sms.driver', $validated['sms_driver'], $updatedBy);
+        // Stored as a decoded array so HttpDriver can read it without
+        // decoding a string every send.
+        Settings::set('sms.http', json_decode($validated['sms_http'] ?: '{}', true), $updatedBy);
 
         Settings::set('receipts.enabled', $request->boolean('receipts_enabled'), $updatedBy);
 

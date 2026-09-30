@@ -12,12 +12,14 @@ use App\Models\AccountType;
 use App\Models\Branch;
 use App\Models\Currency;
 use App\Models\Transfer;
+use App\Services\Transfers\ReceiptService;
 use App\Services\Transfers\TransferCancellationService;
 use App\Services\Transfers\TransferCollectionService;
 use App\Services\Transfers\TransferService;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -27,6 +29,7 @@ class TransfersController extends Controller
         private TransferService $transfers,
         private TransferCancellationService $cancellations,
         private TransferCollectionService $collections,
+        private ReceiptService $receipts,
     ) {}
 
     public function index(Request $request): View
@@ -132,7 +135,18 @@ class TransfersController extends Controller
                 'collections.recordedBy', 'cancellationRequests.requestedBy',
             ]),
             'currencies' => Currency::query()->where('is_active', true)->orderBy('sort')->pluck('code', 'code'),
+            'receipts' => $this->receipts,
         ]);
+    }
+
+    /** Receipt PDF, behind the receipts.enabled switch (BUILD.md §13). */
+    public function receipt(Transfer $transfer): Response
+    {
+        $this->authorize('view', $transfer);
+
+        abort_unless($this->receipts->enabled(), 404);
+
+        return $this->receipts->pdf($transfer)->download($this->receipts->filename($transfer));
     }
 
     public function cancel(Request $request, Transfer $transfer): RedirectResponse

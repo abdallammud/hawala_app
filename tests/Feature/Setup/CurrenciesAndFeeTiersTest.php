@@ -132,6 +132,8 @@ it('lets an admin save settings', function () {
         'currency_max_rate_age_hours' => '48',
         'payout_claim_minutes' => '45',
         'credit_default_max' => '2000',
+        'sms_driver' => 'http',
+        'sms_http' => '{"url":"https://gw.test/send","params":{"to":"{to}"}}',
         'general_company_name' => 'Blue Star',
         'general_timezone' => 'Africa/Mogadishu',
         'general_duplicate_warning_minutes' => '15',
@@ -142,7 +144,35 @@ it('lets an admin save settings', function () {
         ->and(Settings::get('currency.margin_bp'))->toBe(150)
         ->and(Settings::get('credit.default_max_cents'))->toBe(200000)
         ->and(Settings::get('general.company_name'))->toBe('Blue Star')
-        ->and(Settings::get('payout.allow_negative'))->toBeFalse();
+        ->and(Settings::get('payout.allow_negative'))->toBeFalse()
+        // SMS stays off unless the checkbox is ticked, whatever the driver says.
+        ->and(Settings::get('sms.enabled'))->toBeFalse()
+        ->and(Settings::get('sms.driver'))->toBe('http')
+        // Stored decoded, so HttpDriver reads an array not a JSON string.
+        ->and(Settings::get('sms.http'))->toBe(['url' => 'https://gw.test/send', 'params' => ['to' => '{to}']]);
+});
+
+it('rejects a malformed SMS gateway configuration', function () {
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+
+    $this->actingAs($superAdmin)->put('/setup/settings', [
+        'fees_mode' => 'whole',
+        'fees_min_fee' => '0',
+        'fees_large_transfer' => '3000',
+        'commission_send_type' => 'percent',
+        'commission_send_value' => '5000',
+        'commission_payout_type' => 'percent',
+        'commission_payout_value' => '2000',
+        'currency_margin_bp' => '0',
+        'currency_max_rate_age_hours' => '72',
+        'payout_claim_minutes' => '30',
+        'sms_driver' => 'http',
+        'sms_http' => 'not json at all',
+        'general_company_name' => 'Blue Star',
+        'general_timezone' => 'Africa/Mogadishu',
+        'general_duplicate_warning_minutes' => '10',
+    ])->assertSessionHasErrors('sms_http');
 });
 
 it('blocks a plain admin from the settings screen', function () {

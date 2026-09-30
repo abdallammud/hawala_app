@@ -5,8 +5,10 @@ namespace App\Services\Transfers;
 use App\Enums\CancellationRequestStatus;
 use App\Enums\JournalType;
 use App\Enums\LedgerAccountType;
+use App\Enums\SmsEvent;
 use App\Enums\TransferStatus;
 use App\Exceptions\Transfers\TransferStateException;
+use App\Jobs\SendTemplatedSms;
 use App\Models\CancellationRequest;
 use App\Models\Transfer;
 use App\Models\User;
@@ -30,7 +32,7 @@ class TransferCancellationService
      */
     public function cancel(Transfer $transfer, User $by, string $reason, JournalType $type = JournalType::TransferCancelled): Transfer
     {
-        return DB::transaction(function () use ($transfer, $by, $reason, $type) {
+        $cancelled = DB::transaction(function () use ($transfer, $by, $reason, $type) {
             $fresh = Transfer::query()->whereKey($transfer->id)->lockForUpdate()->firstOrFail();
 
             if (! $fresh->status->isOpen()) {
@@ -79,6 +81,10 @@ class TransferCancellationService
 
             return $fresh;
         });
+
+        SendTemplatedSms::dispatch(SmsEvent::TransferCancelled, $cancelled->id);
+
+        return $cancelled;
     }
 
     /** A sending agent asks an admin to cancel a transfer already claimed by a payout agent. */
@@ -140,6 +146,10 @@ class TransferCancellationService
         }
 
         $transfer->update(['status' => TransferStatus::Queued]);
+
+        // Held transfers skip the transfer_sent SMS at creation; it fires
+        // here instead, once the money is genuinely on its way.
+        SendTemplatedSms::dispatch(SmsEvent::TransferSent, $transfer->id);
 
         return $transfer;
     }
