@@ -6,7 +6,9 @@
     <title>{{ __('Receipt') }} {{ $transfer->code }}</title>
     <style>
         @page { margin: 28px 34px; }
-        body { font-family: DejaVu Sans, sans-serif; font-size: 11px; color: #1f2937; }
+        /* Helvetica is a PDF built-in: nothing to embed, so a receipt stays a
+           few tens of KB instead of ~900 KB with DejaVu. Somali is Latin-script. */
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 11px; color: #1f2937; }
         .header { border-bottom: 2px solid #29468a; padding-bottom: 12px; margin-bottom: 18px; }
         .header td { vertical-align: middle; border: 0; padding: 0; }
         .company { font-size: 17px; font-weight: bold; color: #121e3b; }

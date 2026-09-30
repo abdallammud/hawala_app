@@ -55,19 +55,19 @@
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="rounded-lg bg-brand-50 border border-brand-200 p-4">
                 <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">{{ __('Transfers') }}</p>
-                <p class="text-2xl font-bold text-brand-900 mt-1">{{ $data['today_count'] }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-brand-900 mt-1">{{ $data['today_count'] }}</p>
             </div>
             <div class="rounded-lg bg-brand-50 border border-brand-200 p-4">
                 <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">{{ __('Volume') }}</p>
-                <p class="text-2xl font-bold text-brand-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_volume']) }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-brand-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_volume']) }}</p>
             </div>
             <div class="rounded-lg bg-gold-50 border border-gold-200 p-4">
                 <p class="text-xs font-semibold uppercase tracking-wide text-gold-700">{{ __('Fees') }}</p>
-                <p class="text-2xl font-bold text-gold-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_fees']) }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-gold-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_fees']) }}</p>
             </div>
             <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
                 <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">{{ __('Profit after commission') }}</p>
-                <p class="text-2xl font-bold text-emerald-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_profit']) }}</p>
+                <p class="text-xl sm:text-2xl font-bold text-emerald-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_profit']) }}</p>
             </div>
         </div>
 

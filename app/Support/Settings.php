@@ -43,6 +43,16 @@ class Settings
         self::clearCache();
     }
 
+    /**
+     * True when this key has been stored explicitly, as opposed to falling
+     * back to its config default. Used by ProductionSeeder so re-running it
+     * never overwrites an admin's saved choice.
+     */
+    public static function has(string $key): bool
+    {
+        return Setting::query()->where('key', $key)->exists();
+    }
+
     public static function clearCache(): void
     {
         Cache::forget(self::CACHE_KEY);

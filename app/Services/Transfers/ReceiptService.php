@@ -71,15 +71,21 @@ class ReceiptService
     /**
      * The logo as a data URI. dompdf resolves remote URLs unreliably on
      * shared hosting, so the bytes are embedded instead.
+     *
+     * Prefers the small receipt-sized copy: the full logo-mark is 862px and
+     * 400 KB, which base64-encoded turned every one-page receipt into a
+     * 1.3 MB download for an agent to share over mobile data.
      */
     private function logoData(): ?string
     {
-        $path = public_path('images/logo-mark.png');
+        foreach (['images/logo-receipt.png', 'images/logo-mark.png'] as $candidate) {
+            $path = public_path($candidate);
 
-        if (! is_file($path)) {
-            return null;
+            if (is_file($path)) {
+                return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
+            }
         }
 
-        return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
+        return null;
     }
 }

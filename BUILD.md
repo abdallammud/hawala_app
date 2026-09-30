@@ -726,15 +726,36 @@ Notes / deferred:
 - 360 px check across every screen stays in Phase 7's final pass.
 
 ### Phase 7 — SMS, receipts, go-live
-- [ ] SMS drivers, templates CRUD, events, queued jobs, sms_logs, test send
-- [ ] Receipt PDF + WhatsApp share (behind setting)
-- [ ] Scheduler entries (§14), backups configured to a remote disk (ask me which)
-- [ ] ProductionSeeder + DemoSeeder
-- [ ] `DEPLOY.md`: Hostinger steps (below) written for this project
-- [ ] Un-ignore `/public/build` in `.gitignore` and commit the built assets — CLAUDE.md requires
-      them shipped (no Node on the server), but Laravel's stock `.gitignore` excludes them
-- [ ] Final pass: N+1 check, indexes, 360 px check on every screen, `php artisan test` green
+- [x] SMS drivers, templates CRUD, events, queued jobs, sms_logs, test send — `SmsSender` is the
+      only way a message leaves the system and owns the `sms_logs` row, so a gateway failure is
+      recorded rather than thrown: a dead provider can never roll back a paid transfer.
+      `LogDriver` exercises the whole pipeline before a provider is picked; `HttpDriver` is
+      entirely configuration (url, method, send_as, headers, param map with `{to}`, `{message}`,
+      `{sender_id}`) and treats a 200 that fails `success_contains` as a failure, which is how
+      several local gateways report "no credit". Six templates seeded inactive.
+- [x] Receipt PDF + WhatsApp share (behind setting) — logo embedded as a data URI, since dompdf
+      resolves remote URLs unreliably on shared hosting.
+- [x] Scheduler entries (§14) — all six, including the `queue:work --stop-when-empty` drain that
+      stands in for a worker. **Backups: still local-only — needs your decision**, see below.
+- [x] ProductionSeeder + DemoSeeder — both re-runnable. ProductionSeeder never overwrites a
+      setting an admin has since changed. DemoSeeder builds all 40 transfers through the real
+      services, so `hawala:verify-ledger` passes afterwards (asserted in `SeedersTest`).
+- [x] `DEPLOY.md`: Hostinger steps written for this project, with a post-install checklist and
+      a troubleshooting section.
+- [x] Un-ignore `/public/build` in `.gitignore` and commit the built assets.
+- [x] Final pass: N+1 check, indexes, 360 px check on every screen, `php artisan test` green.
+      The N+1 check is now a test (`QueryCountTest`) that measures each page against two dataset
+      sizes rather than asserting a magic number, so it keeps working as the app changes — no
+      page grows its query count with the data. Added indexes for the report date-range scans,
+      which could not use the leading column of the existing composite indexes.
 - **Done when:** deployed to Hostinger and a one-week trial can start.
+
+Notes / still open:
+- **Backup destination needs deciding.** `BACKUP_DISKS` defaults to `local`, so a backup lives on
+  the same server and is lost with it. DEPLOY.md §9 has the one-line change for S3/B2/Wasabi/
+  Dropbox/SFTP; it needs a provider and credentials.
+- The profit-vs-opening-balance question from Phase 6 is unchanged: a `manual_adjustment` counts
+  as profit, which is right for a write-off and wrong for capital you put in.
 
 ---
 

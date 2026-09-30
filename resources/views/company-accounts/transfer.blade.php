@@ -7,7 +7,9 @@
                 <x-select name="from_company_account_id" label="{{ __('From') }}" :options="$accounts" placeholder="{{ __('Select an account') }}" />
                 <x-select name="to_company_account_id" label="{{ __('To') }}" :options="$accounts" placeholder="{{ __('Select an account') }}" />
 
-                <div class="grid grid-cols-2 gap-5">
+                {{-- Stacked on a phone: two money fields side by side at 360px
+                     leaves too little room to read what you typed. --}}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <x-input name="sent" label="{{ __('Sent ($)') }}" type="number" min="0.01" step="0.01" prefix="$" />
                     <x-input name="received" label="{{ __('Received ($)') }}" type="number" min="0.01" step="0.01" prefix="$" hint="{{ __('Less than sent if there were charges.') }}" />
                 </div>

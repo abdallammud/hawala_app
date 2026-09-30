@@ -13,7 +13,9 @@
 /.zed
 /auth.json
 /node_modules
-/public/build
+# /public/build is intentionally NOT ignored: there is no Node on Hostinger,
+# so `npm run build` runs locally and the built assets ship with the repo
+# (CLAUDE.md, "Hosting constraints").
 /public/hot
 /public/storage
 /storage/*.key
