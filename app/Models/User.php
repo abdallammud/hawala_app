@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CommissionType;
+use App\Enums\LedgerAccountType;
 use App\Enums\UserType;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -79,6 +80,36 @@ class User extends Authenticatable
             ->where('owner_id', $this->id)
             ->where('balance_cents', '!=', 0)
             ->exists();
+    }
+
+    /** Memoised sendBalanceCents(); false means "not looked up yet". */
+    private int|null|false $sendBalanceMemo = false;
+
+    /**
+     * Send balance in cents, or null when this user isn't someone who sends —
+     * so the topbar shows the figure to every sending agent (admin or not)
+     * without putting a meaningless $0.00 in front of back-office staff.
+     *
+     * Read-only on purpose: looking at a page must never create an account.
+     * Memoised because the layout renders it on every request.
+     */
+    public function sendBalanceCents(): ?int
+    {
+        if ($this->sendBalanceMemo !== false) {
+            return $this->sendBalanceMemo;
+        }
+
+        $cents = LedgerAccount::query()
+            ->where('type', LedgerAccountType::AgentSend->value)
+            ->where('owner_type', $this->getMorphClass())
+            ->where('owner_id', $this->id)
+            ->value('balance_cents');
+
+        // No account yet: still show it to a sending agent (they will have one
+        // the moment they are topped up), but not to anyone else.
+        return $this->sendBalanceMemo = $cents === null && $this->type !== UserType::SendingAgent
+            ? null
+            : (int) ($cents ?? 0);
     }
 
     public function getActivitylogOptions(): LogOptions

@@ -18,20 +18,26 @@
     @endphp
 
     @if ($attention->isNotEmpty())
-        <x-card :title="__('Needs attention')">
-            <ul class="space-y-2">
+        <div class="rounded-xl border border-amber-300 bg-amber-50 p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="rounded-lg bg-amber-500 text-white p-1.5 shadow-sm">
+                    <x-icon name="exclamation-triangle" class="w-4 h-4" />
+                </span>
+                <h3 class="text-sm font-semibold text-amber-900">{{ __('Needs attention') }}</h3>
+            </div>
+            <ul class="space-y-1.5">
                 @foreach ($attention as $item)
                     <li class="flex items-center gap-2.5 text-sm">
-                        <x-icon name="exclamation-triangle" class="w-4 h-4 text-amber-500 shrink-0" />
+                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0"></span>
                         @if ($item['route'])
-                            <a href="{{ $item['route'] }}" class="text-slate-700 hover:text-brand-600">{{ $item['label'] }}</a>
+                            <a href="{{ $item['route'] }}" class="font-medium text-amber-900 underline decoration-amber-300 hover:decoration-amber-600">{{ $item['label'] }}</a>
                         @else
-                            <span class="text-slate-700">{{ $item['label'] }}</span>
+                            <span class="font-medium text-amber-900">{{ $item['label'] }}</span>
                         @endif
                     </li>
                 @endforeach
             </ul>
-        </x-card>
+        </div>
     @endif
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -46,22 +52,22 @@
     </div>
 
     <x-card :title="__('Today')">
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-            <div>
-                <p class="text-xs text-slate-500">{{ __('Transfers') }}</p>
-                <p class="text-2xl font-semibold text-slate-900 mt-1">{{ $data['today_count'] }}</p>
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="rounded-lg bg-brand-50 border border-brand-200 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">{{ __('Transfers') }}</p>
+                <p class="text-2xl font-bold text-brand-900 mt-1">{{ $data['today_count'] }}</p>
             </div>
-            <div>
-                <p class="text-xs text-slate-500">{{ __('Volume') }}</p>
-                <p class="text-2xl font-semibold text-slate-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_volume']) }}</p>
+            <div class="rounded-lg bg-brand-50 border border-brand-200 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">{{ __('Volume') }}</p>
+                <p class="text-2xl font-bold text-brand-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_volume']) }}</p>
             </div>
-            <div>
-                <p class="text-xs text-slate-500">{{ __('Fees') }}</p>
-                <p class="text-2xl font-semibold text-slate-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_fees']) }}</p>
+            <div class="rounded-lg bg-gold-50 border border-gold-200 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-gold-700">{{ __('Fees') }}</p>
+                <p class="text-2xl font-bold text-gold-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_fees']) }}</p>
             </div>
-            <div>
-                <p class="text-xs text-slate-500">{{ __('Profit after commission') }}</p>
-                <p class="text-2xl font-semibold text-emerald-700 mt-1 font-mono">{{ \App\Support\Money::format($data['today_profit']) }}</p>
+            <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
+                <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">{{ __('Profit after commission') }}</p>
+                <p class="text-2xl font-bold text-emerald-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_profit']) }}</p>
             </div>
         </div>
 

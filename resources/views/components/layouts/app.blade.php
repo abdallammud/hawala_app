@@ -70,15 +70,49 @@
         {{-- Main column --}}
         <div class="lg:pl-72 flex flex-col min-h-full">
 
+            {{-- Send balance is the number a sending agent needs on every screen,
+                 so it sits in the topbar rather than only on the dashboard: a
+                 chip from `sm` up, and its own full-width strip on a phone where
+                 the topbar has no room. Null means this user isn't someone who
+                 sends, so nobody else gets a meaningless $0.00. --}}
+            @php
+                $sendBalance = auth()->user()?->sendBalanceCents();
+                $sendTone = $sendBalance > 0
+                    ? ['border' => 'border-brand-200', 'bg' => 'bg-brand-50', 'hover' => 'hover:bg-brand-100', 'icon' => 'bg-brand-600', 'label' => 'text-brand-700', 'value' => 'text-brand-900']
+                    : ['border' => 'border-red-300', 'bg' => 'bg-red-50', 'hover' => 'hover:bg-red-100', 'icon' => 'bg-red-600', 'label' => 'text-red-700', 'value' => 'text-red-900'];
+                $sendHref = Route::has('balance-requests.index') ? route('balance-requests.index') : '#';
+            @endphp
+
             {{-- Topbar --}}
-            <header class="sticky top-0 z-30 h-16 bg-white border-b border-slate-200 flex items-center gap-4 px-4 sm:px-6">
-                <button type="button" x-on:click="drawerOpen = true" class="text-slate-500 hover:text-slate-700 lg:hidden">
+            <div class="sticky top-0 z-30">
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center gap-3 sm:gap-4 px-4 sm:px-6">
+                <button type="button" x-on:click="drawerOpen = true" class="text-slate-500 hover:text-slate-700 lg:hidden shrink-0">
                     <x-icon name="bars-3" class="w-6 h-6" />
                 </button>
 
                 <h1 class="text-lg font-semibold text-slate-900 truncate">{{ $title ?? __('Dashboard') }}</h1>
 
-                <div class="ml-auto flex items-center gap-2">
+                @if ($sendBalance !== null)
+                    <a
+                        href="{{ $sendHref }}"
+                        class="hidden sm:flex items-center gap-2.5 rounded-lg border px-3 py-1.5 shrink-0 transition {{ $sendTone['bg'] }} {{ $sendTone['border'] }} {{ $sendTone['hover'] }}"
+                        title="{{ __('Send balance') }}"
+                    >
+                        <span class="shrink-0 rounded-md p-1.5 shadow-sm text-white {{ $sendTone['icon'] }}">
+                            <x-icon name="wallet" class="w-4 h-4" />
+                        </span>
+                        <span>
+                            <span class="block text-[10px] font-semibold uppercase tracking-wide leading-none {{ $sendTone['label'] }}">
+                                {{ __('Send balance') }}
+                            </span>
+                            <span class="block font-mono tabular-nums text-sm font-bold leading-tight mt-0.5 {{ $sendTone['value'] }}">
+                                {{ \App\Support\Money::format($sendBalance) }}
+                            </span>
+                        </span>
+                    </a>
+                @endif
+
+                <div class="ml-auto flex items-center gap-2 shrink-0">
                     <a href="{{ Route::has('notifications.index') ? route('notifications.index') : '#' }}" class="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg">
                         <x-icon name="bell" class="w-5 h-5" />
                         @php $unread = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
@@ -127,6 +161,26 @@
                     </div>
                 </div>
             </header>
+
+            {{-- Phone: the send balance gets its own row, so it is never
+                 squeezed out of the topbar by the page title. --}}
+            @if ($sendBalance !== null)
+                <a
+                    href="{{ $sendHref }}"
+                    class="sm:hidden flex items-center gap-3 border-b px-4 py-2.5 {{ $sendTone['bg'] }} {{ $sendTone['border'] }}"
+                >
+                    <span class="shrink-0 rounded-md p-1.5 shadow-sm text-white {{ $sendTone['icon'] }}">
+                        <x-icon name="wallet" class="w-4 h-4" />
+                    </span>
+                    <span class="text-[11px] font-semibold uppercase tracking-wide {{ $sendTone['label'] }}">
+                        {{ __('Send balance') }}
+                    </span>
+                    <span class="ml-auto font-mono tabular-nums text-base font-bold {{ $sendTone['value'] }}">
+                        {{ \App\Support\Money::format($sendBalance) }}
+                    </span>
+                </a>
+            @endif
+            </div>
 
             {{-- Page content --}}
             <main class="flex-1 px-4 sm:px-6 py-6">
