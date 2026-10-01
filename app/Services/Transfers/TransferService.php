@@ -32,12 +32,12 @@ class TransferService
      * here server-side — client numbers are never trusted (BUILD.md §8).
      *
      * `amount_cents` is read through `mode`: in Pay mode it is what the
-     * customer hands over in their currency, in Receive mode it is the USD
-     * the receiver must be paid.
+     * customer hands over in `currency`, in Receive mode it is what the
+     * receiver is paid, in `payout_currency` (USD unless the agent changed it).
      *
      * @param  array{sender_name:string,sender_phone:string,receiver_name:string,receiver_phone:string,
      *               receiver_account_type_id:?int,receiver_account_number:?string,
-     *               currency:string,amount_cents:int,mode?:QuoteMode,round_up_cents?:int,
+     *               currency:string,amount_cents:int,mode?:QuoteMode,payout_currency?:string,
      *               is_uncollected:bool,note:?string}  $data
      */
     public function create(User $agent, Branch $branch, array $data, string $idempotencyKey): Transfer
@@ -55,9 +55,14 @@ class TransferService
         // quoting existed. The form always says which mode it means.
         $mode = $data['mode'] ?? QuoteMode::Receive;
         $marginBp = (int) Settings::get('currency.margin_bp', 0);
-        $roundUpCents = $this->roundUpFor($agent, $mode, $data);
 
-        $quote = $this->quotes->quote($mode, $data['currency'], $data['amount_cents'], $marginBp, $roundUpCents);
+        $quote = $this->quotes->quote(
+            $mode,
+            $data['currency'],
+            $data['amount_cents'],
+            $marginBp,
+            $data['payout_currency'] ?? 'USD',
+        );
 
         $sendingShare = $this->commissions->sendingShare($agent, $quote['fee_cents']);
 
@@ -88,7 +93,6 @@ class TransferService
                 'fx_income_cents' => $quote['fx_income_cents'],
                 'total_debit_cents' => $quote['total_debit_cents'],
                 'collect_original_cents' => $quote['collect_original_cents'],
-                'round_up_original_cents' => $quote['round_up_original_cents'],
                 'sending_share_cents' => $sendingShare['share_cents'],
                 'fee_snapshot' => $quote['fee_snapshot'],
                 'commission_snapshot' => ['sending' => $sendingShare['snapshot']],
@@ -157,43 +161,13 @@ class TransferService
     }
 
     /**
-     * How much extra the agent may add to the collected amount. Only in
-     * Receive mode, only on an FX leg, only with the permission, and never
-     * more than `currency.max_round_up_bp` of the computed amount — so a
-     * slipped digit can't overcharge the customer.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function roundUpFor(User $agent, QuoteMode $mode, array $data): int
-    {
-        $requested = max(0, (int) ($data['round_up_cents'] ?? 0));
-
-        if ($requested === 0
-            || $mode !== QuoteMode::Receive
-            || $data['currency'] === 'USD'
-            || ! $agent->can('transfers.round_collect')) {
-            return 0;
-        }
-
-        $base = $this->quotes->quote(
-            $mode,
-            $data['currency'],
-            $data['amount_cents'],
-            (int) Settings::get('currency.margin_bp', 0),
-        );
-
-        $maxBp = (int) Settings::get('currency.max_round_up_bp', 500);
-
-        return min($requested, intdiv($base['collect_min_original_cents'] * $maxBp, 10000));
-    }
-
-    /**
      * Recent near-identical transfer by the same agent — a warning, never a
      * block (BUILD.md §8). The agent confirms with "Send anyway".
      *
-     * Compared on whichever leg the agent typed: the USD payout in Receive
-     * mode, the cash collected in Pay mode. The couple of cents' tolerance
-     * covers a payout that was solved down to fit the fee exactly.
+     * Compared on whichever leg the agent typed: the payout in Receive mode
+     * (normalised to USD, since that is what is stored), the cash collected
+     * in Pay mode. The couple of cents' tolerance covers a payout that was
+     * solved down to fit the fee exactly.
      */
     public function findRecentDuplicate(
         User $agent,
@@ -201,11 +175,16 @@ class TransferService
         int $amountCents,
         QuoteMode $mode = QuoteMode::Receive,
         string $currency = 'USD',
+        string $payoutCurrency = 'USD',
     ): ?Transfer {
         $minutes = (int) Settings::get('general.duplicate_warning_minutes', 10);
 
         if ($minutes <= 0) {
             return null;
+        }
+
+        if ($mode === QuoteMode::Receive) {
+            $amountCents = $this->quotes->toUsd($payoutCurrency, $amountCents);
         }
 
         return Transfer::query()

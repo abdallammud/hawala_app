@@ -118,12 +118,6 @@
                         <dt class="text-slate-500">{{ __('Collected from customer') }}</dt>
                         <dd class="font-mono text-slate-900">{{ number_format($transfer->collect_original_cents / 100, 2) }} {{ $transfer->original_currency }}</dd>
                     </div>
-                    @if ($transfer->round_up_original_cents > 0)
-                        <div class="flex justify-between py-2.5">
-                            <dt class="text-slate-500">{{ __('Rounded up by') }}</dt>
-                            <dd class="font-mono text-slate-900">{{ number_format($transfer->round_up_original_cents / 100, 2) }} {{ $transfer->original_currency }}</dd>
-                        </div>
-                    @endif
                     <div class="flex justify-between py-2.5 font-medium">
                         <dt class="text-slate-700">{{ __('Taken from send balance') }}</dt>
                         <dd class="font-mono text-slate-900"><x-money :cents="$transfer->total_debit_cents" /></dd>

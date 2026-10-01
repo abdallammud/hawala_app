@@ -13,11 +13,6 @@ return new class extends Migration
             // Which leg the agent typed: 'pay' (customer hands over X in their
             // currency) or 'receive' (receiver must get X USD). BUILD.md §7.
             $table->string('quote_mode', 10)->default('pay')->after('original_currency');
-
-            // Extra collected on top of the computed amount, in the customer's
-            // currency — the agent rounding €94.93 up to €95.00. Always 0
-            // unless the agent holds transfers.round_collect.
-            $table->bigInteger('round_up_original_cents')->default(0)->after('collect_original_cents');
         });
 
         // Rows created before two-way quoting were all typed in the customer's
@@ -29,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('transfers', function (Blueprint $table) {
-            $table->dropColumn(['quote_mode', 'round_up_original_cents']);
+            $table->dropColumn('quote_mode');
         });
     }
 };

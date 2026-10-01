@@ -8,16 +8,19 @@ use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 
 /**
- * BUILD.md §7's transfer maths, in both directions.
+ * BUILD.md §7's transfer maths. A transfer has two legs — what the customer
+ * hands over and what the receiver is paid — and the agent fills in whichever
+ * one the customer named. `$mode` says which:
  *
- * - QuoteMode::Pay     — the customer hands over a fixed amount in currency C
- *                        and the fee comes out of it ("here is €100, send it").
- * - QuoteMode::Receive — the receiver must be paid a fixed amount in USD and
- *                        the amount to collect in C is derived, rounded up
- *                        ("how much do I pay so he gets $100 in Banadir?").
+ * - QuoteMode::Receive — "he must get $100 in Banadir"; the cash to collect
+ *                        in currency C is derived and rounded up.
+ * - QuoteMode::Pay     — "here is €100, send it"; the fee comes out of the
+ *                        €100 and the payout is what is left.
  *
- * The gap between the market rate and the customer rate — plus any round-up
- * the agent adds in Receive mode — is company FX income.
+ * Everything stored is USD. `$payoutCurrency` only changes the unit the
+ * payout leg is typed and shown in — it converts at the market rate, with no
+ * margin, because the spread belongs to the cash leg. The gap between the
+ * market rate and the customer rate is company FX income.
  */
 class QuoteService
 {
@@ -27,11 +30,17 @@ class QuoteService
     ) {}
 
     /**
-     * @param  int  $inputCents  in C for Pay mode, in USD for Receive mode
-     * @param  int  $roundUpCents  extra collected in C, Receive mode only
+     * @param  string  $currency  what the customer pays in
+     * @param  int  $inputCents  in $currency for Pay mode, in $payoutCurrency for Receive mode
+     * @param  string  $payoutCurrency  the unit the receiver's leg is shown in
      */
-    public function quote(QuoteMode $mode, string $currency, int $inputCents, int $marginBp, int $roundUpCents = 0): array
-    {
+    public function quote(
+        QuoteMode $mode,
+        string $currency,
+        int $inputCents,
+        int $marginBp,
+        string $payoutCurrency = 'USD',
+    ): array {
         $isUsd = $currency === 'USD';
         $marketRate = $this->rates->current($currency);
 
@@ -46,15 +55,9 @@ class QuoteService
                 )
             )->toScale(8, RoundingMode::HALF_UP);
 
-        // A round-up is an FX-leg feature: there is no spread to round on a
-        // USD-to-USD transfer, so it is ignored rather than silently charged.
-        $roundUpCents = $isUsd ? 0 : max(0, $roundUpCents);
-
-        [$amountCents, $feeCents, $feeSnapshot, $collectMinCents] = $mode === QuoteMode::Receive
-            ? $this->fromPayout($inputCents, $customerRate)
+        [$amountCents, $feeCents, $feeSnapshot, $collectOriginalCents] = $mode === QuoteMode::Receive
+            ? $this->fromPayout($this->toUsd($payoutCurrency, $inputCents), $customerRate)
             : $this->fromCollected($inputCents, $customerRate, $isUsd);
-
-        $collectOriginalCents = $collectMinCents + $roundUpCents;
 
         $feeOriginalCents = $isUsd
             ? $feeCents
@@ -71,19 +74,42 @@ class QuoteService
         return [
             'quote_mode' => $mode->value,
             'currency' => $currency,
+            'payout_currency' => $payoutCurrency,
             'market_rate' => (string) $marketRate,
             'customer_rate' => (string) $customerRate,
             'original_amount_cents' => $collectOriginalCents - $feeOriginalCents,
             'amount_cents' => $amountCents,
+            // The payout leg in the unit the agent is looking at — what the
+            // other field on the form fills itself with.
+            'payout_original_cents' => $this->fromUsd($payoutCurrency, $amountCents),
             'fee_cents' => $feeCents,
             'fee_snapshot' => $feeSnapshot,
             'fee_original_cents' => $feeOriginalCents,
-            'collect_min_original_cents' => $collectMinCents,
-            'round_up_original_cents' => $roundUpCents,
             'collect_original_cents' => $collectOriginalCents,
             'fx_income_cents' => $fxIncomeCents,
             'total_debit_cents' => $amountCents + $feeCents + $fxIncomeCents,
         ];
+    }
+
+    /** Convert into USD cents at the market rate — no margin, no fee. */
+    public function toUsd(string $currency, int $cents): int
+    {
+        return $currency === 'USD'
+            ? $cents
+            : BigDecimal::of($cents)
+                ->multipliedBy($this->rates->current($currency))
+                ->toScale(0, RoundingMode::HALF_UP)
+                ->toInt();
+    }
+
+    /** The other way: USD cents expressed in $currency, at the market rate. */
+    public function fromUsd(string $currency, int $cents): int
+    {
+        return $currency === 'USD'
+            ? $cents
+            : BigDecimal::of($cents)
+                ->dividedBy($this->rates->current($currency), 0, RoundingMode::HALF_UP)
+                ->toInt();
     }
 
     /**
@@ -96,11 +122,11 @@ class QuoteService
     {
         $fee = $this->fees->calculate($amountCents);
 
-        $collectMinCents = BigDecimal::of($amountCents + $fee['fee_cents'])
+        $collectCents = BigDecimal::of($amountCents + $fee['fee_cents'])
             ->dividedBy($customerRate, 0, RoundingMode::CEILING)
             ->toInt();
 
-        return [$amountCents, $fee['fee_cents'], $fee['snapshot'], $collectMinCents];
+        return [$amountCents, $fee['fee_cents'], $fee['snapshot'], $collectCents];
     }
 
     /**
@@ -118,10 +144,11 @@ class QuoteService
 
         $solved = $this->fees->inverse($budgetCents);
 
-        $collectMinCents = $isUsd
-            ? $solved['amount_cents'] + $solved['fee_cents']
-            : $collectCents;
-
-        return [$solved['amount_cents'], $solved['fee_cents'], $solved['snapshot'], $collectMinCents];
+        return [
+            $solved['amount_cents'],
+            $solved['fee_cents'],
+            $solved['snapshot'],
+            $isUsd ? $solved['amount_cents'] + $solved['fee_cents'] : $collectCents,
+        ];
     }
 }

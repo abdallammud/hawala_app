@@ -28,8 +28,9 @@ function postTransfer(array $overrides = []): array
         'receiver_name' => 'Farah Omar',
         'receiver_phone' => '+252611234567',
         'currency' => 'USD',
+        'payout_currency' => 'USD',
         'mode' => 'receive',
-        'amount' => '100',
+        'payout_amount' => '100',
         'confirm_duplicate' => '1',
     ], $overrides);
 }
@@ -75,7 +76,7 @@ it('shows a friendly message with a top-up link when the balance is short', func
     $agent = H::sendingAgent(fundCents: 1000); // $10 only
 
     $this->actingAs($agent)
-        ->post('/transfers', postTransfer(['amount' => '500']))
+        ->post('/transfers', postTransfer(['payout_amount' => '500']))
         ->assertRedirect()
         ->assertSessionHas('insufficient_balance');
 

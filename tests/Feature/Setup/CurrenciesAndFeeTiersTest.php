@@ -129,12 +129,10 @@ it('lets an admin save settings', function () {
         'commission_payout_type' => 'percent',
         'commission_payout_value' => '1500',
         'currency_margin_bp' => '150',
-        'currency_max_round_up_bp' => '300',
         'currency_max_rate_age_hours' => '48',
         'payout_claim_minutes' => '45',
         'credit_default_max' => '2000',
-        'sms_driver' => 'http',
-        'sms_http' => '{"url":"https://gw.test/send","params":{"to":"{to}"}}',
+        'sms_driver' => 'hormuud',
         'general_company_name' => 'Blue Star',
         'general_timezone' => 'Africa/Mogadishu',
         'general_duplicate_warning_minutes' => '15',
@@ -148,12 +146,10 @@ it('lets an admin save settings', function () {
         ->and(Settings::get('payout.allow_negative'))->toBeFalse()
         // SMS stays off unless the checkbox is ticked, whatever the driver says.
         ->and(Settings::get('sms.enabled'))->toBeFalse()
-        ->and(Settings::get('sms.driver'))->toBe('http')
-        // Stored decoded, so HttpDriver reads an array not a JSON string.
-        ->and(Settings::get('sms.http'))->toBe(['url' => 'https://gw.test/send', 'params' => ['to' => '{to}']]);
+        ->and(Settings::get('sms.driver'))->toBe('hormuud');
 });
 
-it('rejects a malformed SMS gateway configuration', function () {
+it('rejects an unknown SMS provider', function () {
     $superAdmin = User::factory()->create();
     $superAdmin->assignRole('super-admin');
 
@@ -166,15 +162,13 @@ it('rejects a malformed SMS gateway configuration', function () {
         'commission_payout_type' => 'percent',
         'commission_payout_value' => '2000',
         'currency_margin_bp' => '0',
-        'currency_max_round_up_bp' => '500',
         'currency_max_rate_age_hours' => '72',
         'payout_claim_minutes' => '30',
         'sms_driver' => 'http',
-        'sms_http' => 'not json at all',
         'general_company_name' => 'Blue Star',
         'general_timezone' => 'Africa/Mogadishu',
         'general_duplicate_warning_minutes' => '10',
-    ])->assertSessionHasErrors('sms_http');
+    ])->assertSessionHasErrors('sms_driver');
 });
 
 it('blocks a plain admin from the settings screen', function () {

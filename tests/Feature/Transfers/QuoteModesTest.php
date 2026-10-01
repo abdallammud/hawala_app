@@ -6,12 +6,10 @@ use App\Models\Branch;
 use App\Models\JournalLine;
 use App\Models\Transfer;
 use App\Services\Ledger\LedgerService;
-use App\Services\Transfers\TransferService;
 use App\Support\Settings;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Permission;
 use Tests\Feature\Transfers\TransferTestHelpers as H;
 
 beforeEach(function () {
@@ -21,6 +19,10 @@ beforeEach(function () {
     Settings::set('currency.margin_bp', 100); // EUR at 1.08 → customer rate 1.0692
 });
 
+/**
+ * The form posts both legs and says which one the agent typed; the other was
+ * filled in by the rate and the server ignores it.
+ */
 function postEuroTransfer(array $overrides = []): array
 {
     return array_merge([
@@ -30,20 +32,39 @@ function postEuroTransfer(array $overrides = []): array
         'sender_phone' => '+46701234567',
         'receiver_name' => 'Farah Omar',
         'receiver_phone' => '+252611234567',
-        'currency' => 'EUR',
         'mode' => 'receive',
-        'amount' => '100',
+        'payout_currency' => 'USD',
+        'payout_amount' => '100',
+        'currency' => 'EUR',
+        'pay_amount' => '98.21',
         'confirm_duplicate' => '1',
     ], $overrides);
 }
 
-it('offers both directions on the form', function () {
+it('shows both legs on the form, each with its own currency', function () {
     $this->actingAs(H::sendingAgent())
         ->get('/transfers/create')
         ->assertOk()
-        ->assertSee('Customer pays')
         ->assertSee('Receiver gets')
-        ->assertSee('Currency the customer pays in');
+        ->assertSee('Customer pays')
+        ->assertSee('name="payout_amount"', false)
+        ->assertSee('name="payout_currency"', false)
+        ->assertSee('name="pay_amount"', false)
+        ->assertSee('name="currency"', false);
+});
+
+it('opens the pay box on the currency that agent used last', function () {
+    $agent = H::sendingAgent(fundCents: 100000);
+
+    // First visit: nothing to go on, so USD.
+    $this->actingAs($agent)->get('/transfers/create')->assertOk()
+        ->assertSee("payCurrency: 'USD'", false);
+
+    $this->actingAs($agent)->post('/transfers', postEuroTransfer());
+
+    // Next customer: the euro box is already selected.
+    $this->actingAs($agent)->get('/transfers/create')->assertOk()
+        ->assertSee("payCurrency: 'EUR'", false);
 });
 
 it('answers "how much do I pay so he gets $100 in Banadir?"', function () {
@@ -58,7 +79,6 @@ it('answers "how much do I pay so he gets $100 in Banadir?"', function () {
         ->and($transfer->amount_cents)->toBe(10000)
         ->and($transfer->fee_cents)->toBe(500)
         ->and($transfer->collect_original_cents)->toBe(9821)
-        ->and($transfer->round_up_original_cents)->toBe(0)
         ->and($transfer->fx_income_cents)->toBe(107)
         ->and($transfer->total_debit_cents)->toBe(10607);
 
@@ -71,7 +91,7 @@ it('takes the fee out of the euros the customer hands over', function () {
     $agent = H::sendingAgent(fundCents: 100000);
 
     $this->actingAs($agent)
-        ->post('/transfers', postEuroTransfer(['mode' => 'pay', 'amount' => '100']))
+        ->post('/transfers', postEuroTransfer(['mode' => 'pay', 'pay_amount' => '100']))
         ->assertRedirect();
 
     $transfer = Transfer::query()->firstOrFail();
@@ -87,95 +107,45 @@ it('takes the fee out of the euros the customer hands over', function () {
     expect(JournalLine::query()->sum('amount_cents'))->toBe(0);
 });
 
-it('lets a permitted agent round the collected amount up, and keeps the extra', function () {
+it('ignores the auto-filled leg — only the typed one counts', function () {
     $agent = H::sendingAgent(fundCents: 100000);
-    $agent->givePermissionTo(Permission::findByName('transfers.round_collect'));
 
-    // €98.21 computed, agent asks for a round €99.
+    // A stale (or tampered) euro figure must not change what is charged.
     $this->actingAs($agent)
-        ->post('/transfers', postEuroTransfer(['collect' => '99.00']))
+        ->post('/transfers', postEuroTransfer(['pay_amount' => '1.00']))
+        ->assertRedirect();
+
+    expect(Transfer::query()->firstOrFail()->collect_original_cents)->toBe(9821);
+});
+
+it('accepts a payout typed in euros and still pays out in USD', function () {
+    Settings::set('currency.margin_bp', 0);
+    $agent = H::sendingAgent(fundCents: 100000);
+
+    $this->actingAs($agent)
+        ->post('/transfers', postEuroTransfer(['payout_currency' => 'EUR', 'payout_amount' => '100']))
         ->assertRedirect();
 
     $transfer = Transfer::query()->firstOrFail();
 
-    expect($transfer->collect_original_cents)->toBe(9900)
-        ->and($transfer->round_up_original_cents)->toBe(79)
-        // The receiver is unaffected — only the company's side moves.
-        ->and($transfer->amount_cents)->toBe(10000)
-        ->and($transfer->fee_cents)->toBe(500)
-        ->and($transfer->fx_income_cents)->toBe(192)   // 107 + €0.79 at 1.08
-        ->and($transfer->total_debit_cents)->toBe(10692);
-
-    expect(JournalLine::query()->sum('amount_cents'))->toBe(0)
-        ->and(app(LedgerService::class)->system(LedgerAccountType::FxIncome)->fresh()->balance_cents)->toBe(192);
-});
-
-it('refuses a round-up from an agent without the permission', function () {
-    $agent = H::sendingAgent(fundCents: 100000);
-
-    expect($agent->can('transfers.round_collect'))->toBeFalse();
-
-    $this->actingAs($agent)
-        ->post('/transfers', postEuroTransfer(['collect' => '99.00']))
-        ->assertSessionHasErrors('collect');
-
-    expect(Transfer::query()->count())->toBe(0);
-});
-
-it('refuses collecting less than the maths says', function () {
-    $agent = H::sendingAgent(fundCents: 100000);
-    $agent->givePermissionTo(Permission::findByName('transfers.round_collect'));
-
-    $this->actingAs($agent)
-        ->post('/transfers', postEuroTransfer(['collect' => '90.00']))
-        ->assertSessionHasErrors('collect');
-
-    expect(Transfer::query()->count())->toBe(0);
-});
-
-it('refuses a round-up beyond the ceiling, and clamps one that slips past', function () {
-    Settings::set('currency.max_round_up_bp', 500); // 5% of €98.21 = €4.91
-
-    $agent = H::sendingAgent(fundCents: 100000);
-    $agent->givePermissionTo(Permission::findByName('transfers.round_collect'));
-
-    $this->actingAs($agent)
-        ->post('/transfers', postEuroTransfer(['collect' => '150.00']))
-        ->assertSessionHasErrors('collect');
-
-    expect(Transfer::query()->count())->toBe(0);
-
-    // The service clamps too, so a caller that skips the form cannot overcharge.
-    $transfer = app(TransferService::class)->create(
-        $agent,
-        $this->branch,
-        H::transferPayload([
-            'currency' => 'EUR',
-            'amount_cents' => 10000,
-            'mode' => QuoteMode::Receive,
-            'round_up_cents' => 5000,
-        ]),
-        (string) Str::uuid(),
-    );
-
-    expect($transfer->round_up_original_cents)->toBe(491)
-        ->and($transfer->collect_original_cents)->toBe(9821 + 491);
-});
-
-it('ignores a round-up on a USD transfer, where there is no spread', function () {
-    $agent = H::sendingAgent(fundCents: 100000);
-    $agent->givePermissionTo(Permission::findByName('transfers.round_collect'));
-
-    $transfer = app(TransferService::class)->create(
-        $agent,
-        $this->branch,
-        H::transferPayload(['amount_cents' => 10000, 'mode' => QuoteMode::Receive, 'round_up_cents' => 500]),
-        (string) Str::uuid(),
-    );
-
-    expect($transfer->round_up_original_cents)->toBe(0)
+    expect($transfer->amount_cents)->toBe(10800)   // €100 at the market rate
+        ->and($transfer->fee_cents)->toBe(540)
         ->and($transfer->collect_original_cents)->toBe(10500)
-        ->and($transfer->fx_income_cents)->toBe(0);
+        ->and($transfer->original_currency)->toBe('EUR');
+});
+
+it('needs the leg it says the agent typed', function () {
+    $agent = H::sendingAgent(fundCents: 100000);
+
+    $this->actingAs($agent)
+        ->post('/transfers', postEuroTransfer(['mode' => 'pay', 'pay_amount' => null]))
+        ->assertSessionHasErrors('pay_amount');
+
+    $this->actingAs($agent)
+        ->post('/transfers', postEuroTransfer(['payout_amount' => null]))
+        ->assertSessionHasErrors('payout_amount');
+
+    expect(Transfer::query()->count())->toBe(0);
 });
 
 it('rejects an amount too small to cover the fee', function () {
@@ -184,8 +154,20 @@ it('rejects an amount too small to cover the fee', function () {
     $agent = H::sendingAgent(fundCents: 100000);
 
     $this->actingAs($agent)
-        ->post('/transfers', postEuroTransfer(['mode' => 'pay', 'amount' => '1']))
-        ->assertSessionHasErrors('amount');
+        ->post('/transfers', postEuroTransfer(['mode' => 'pay', 'pay_amount' => '1']))
+        ->assertSessionHasErrors('pay_amount');
 
     expect(Transfer::query()->count())->toBe(0);
+});
+
+it('warns about a duplicate on the leg the agent typed', function () {
+    $agent = H::sendingAgent(fundCents: 100000);
+
+    $this->actingAs($agent)->post('/transfers', postEuroTransfer());
+
+    $this->actingAs($agent)
+        ->post('/transfers', postEuroTransfer(['confirm_duplicate' => '0']))
+        ->assertSessionHas('duplicate_warning');
+
+    expect(Transfer::query()->count())->toBe(1);
 });

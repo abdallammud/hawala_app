@@ -19,7 +19,6 @@ class Transfer extends Model
         'receiver_account_type_id', 'receiver_account_number',
         'original_currency', 'quote_mode', 'original_amount_cents', 'market_rate', 'margin_bp', 'customer_rate',
         'amount_cents', 'fee_cents', 'fx_income_cents', 'total_debit_cents', 'collect_original_cents',
-        'round_up_original_cents',
         'sending_share_cents', 'payout_share_cents', 'company_share_cents',
         'fee_snapshot', 'commission_snapshot', 'status', 'is_large',
         'claimed_by', 'claimed_at', 'claim_expires_at', 'assigned_by',

@@ -85,26 +85,31 @@ it('takes the fee out of a USD amount too, with no fx income', function () {
         ->and($quote['total_debit_cents'])->toBe(10000);
 });
 
-it('adds a round-up to fx income, and ignores one on a USD transfer', function () {
+it('lets the payout leg be typed in another currency, at the market rate', function () {
     euro();
 
-    $plain = app(QuoteService::class)->quote(QuoteMode::Receive, 'EUR', 10000, marginBp: 100);
-    $rounded = app(QuoteService::class)->quote(QuoteMode::Receive, 'EUR', 10000, marginBp: 100, roundUpCents: 179);
+    // "He must receive €100." The payout is still USD — €100 at 1.08 — and
+    // the margin applies only to the cash the customer hands over.
+    $quote = app(QuoteService::class)->quote(QuoteMode::Receive, 'EUR', 10000, marginBp: 100, payoutCurrency: 'EUR');
 
-    expect($rounded['collect_original_cents'])->toBe($plain['collect_original_cents'] + 179)
-        ->and($rounded['round_up_original_cents'])->toBe(179)
-        ->and($rounded['amount_cents'])->toBe($plain['amount_cents'])
-        ->and($rounded['fee_cents'])->toBe($plain['fee_cents'])
-        // The extra euros are worth their market value in USD, and all of it
-        // is company income.
-        ->and($rounded['fx_income_cents'])->toBe($plain['fx_income_cents'] + 193)
-        ->and($rounded['total_debit_cents'])->toBe($plain['total_debit_cents'] + 193);
+    expect($quote['amount_cents'])->toBe(10800)
+        ->and($quote['payout_original_cents'])->toBe(10000)
+        ->and($quote['payout_currency'])->toBe('EUR')
+        ->and($quote['fee_cents'])->toBe(540)
+        ->and($quote['collect_original_cents'])->toBe(10607) // ceil(113.40 / 1.0692)
+        ->and($quote['total_debit_cents'])
+        ->toBe($quote['amount_cents'] + $quote['fee_cents'] + $quote['fx_income_cents']);
+});
 
-    $usd = app(QuoteService::class)->quote(QuoteMode::Receive, 'USD', 10000, marginBp: 0, roundUpCents: 500);
+it('reports the payout leg in the chosen currency in pay mode too', function () {
+    euro();
 
-    expect($usd['round_up_original_cents'])->toBe(0)
-        ->and($usd['collect_original_cents'])->toBe(10500)
-        ->and($usd['fx_income_cents'])->toBe(0);
+    $quote = app(QuoteService::class)->quote(QuoteMode::Pay, 'EUR', 10000, marginBp: 100, payoutCurrency: 'EUR');
+
+    // $101.83 paid out, shown back to the agent as €94.29 at the market rate.
+    expect($quote['amount_cents'])->toBe(10183)
+        ->and($quote['payout_original_cents'])->toBe(9429)
+        ->and($quote['collect_original_cents'])->toBe(10000);
 });
 
 it('keeps collect = original + fee in the customer currency, in both modes', function () {

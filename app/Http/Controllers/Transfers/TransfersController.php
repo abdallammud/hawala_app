@@ -70,10 +70,20 @@ class TransfersController extends Controller
 
         $branches = Branch::query()->where('is_active', true)->orderBy('name')->get();
 
+        $currencies = Currency::query()->where('is_active', true)->orderBy('sort')->pluck('code', 'code');
+
+        // An agent in Europe collects in the same currency every day, so the
+        // "Customer pays" box opens on whatever they used last.
+        $lastCurrency = Transfer::query()
+            ->where('sending_agent_id', $request->user()->id)
+            ->latest('id')
+            ->value('original_currency');
+
         return view('transfers.create', [
             'branches' => $branches->pluck('name', 'id'),
             'onlyBranchId' => $branches->count() === 1 ? $branches->first()->id : null,
-            'currencies' => Currency::query()->where('is_active', true)->orderBy('sort')->pluck('code', 'code'),
+            'currencies' => $currencies,
+            'payCurrency' => $currencies->has($lastCurrency) ? $lastCurrency : 'USD',
             'accountTypes' => AccountType::query()->where('is_active', true)->orderBy('sort')->pluck('name', 'id'),
             'idempotencyKey' => (string) Str::uuid(),
         ]);
@@ -83,8 +93,9 @@ class TransfersController extends Controller
     {
         $agent = $request->user();
         $branch = Branch::findOrFail($request->integer('branch_id'));
-        $amountCents = Money::parseCents($request->string('amount'));
         $mode = $request->mode();
+        $amountCents = $request->sourceAmountCents();
+        $payoutCurrency = $request->string('payout_currency')->toString();
 
         // Duplicate warning is a speed bump, not a block: the agent resubmits
         // with confirm_duplicate once they've seen it (BUILD.md §8).
@@ -95,6 +106,7 @@ class TransfersController extends Controller
                 $amountCents,
                 $mode,
                 $request->string('currency'),
+                $payoutCurrency,
             );
 
             if ($duplicate) {
@@ -119,8 +131,8 @@ class TransfersController extends Controller
                 'receiver_account_number' => $request->input('receiver_account_number'),
                 'currency' => $request->string('currency'),
                 'mode' => $mode,
+                'payout_currency' => $payoutCurrency,
                 'amount_cents' => $amountCents,
-                'round_up_cents' => $request->roundUpCents(),
                 'is_uncollected' => $request->boolean('is_uncollected'),
                 'note' => $request->input('note'),
             ], $request->string('idempotency_key'));
@@ -129,7 +141,9 @@ class TransfersController extends Controller
         } catch (RateUnavailableException $e) {
             return back()->withInput()->withErrors(['currency' => $e->getMessage()]);
         } catch (AmountTooSmallException $e) {
-            return back()->withInput()->withErrors(['amount' => $e->getMessage()]);
+            // Only reachable in Pay mode: the cash on the counter is smaller
+            // than the fee it has to carry.
+            return back()->withInput()->withErrors(['pay_amount' => $e->getMessage()]);
         }
 
         return redirect()->route('transfers.show', $transfer)

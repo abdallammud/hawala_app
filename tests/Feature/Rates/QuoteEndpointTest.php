@@ -81,13 +81,24 @@ it('quotes the other way round when the customer names what they pay', function 
         ]);
 });
 
-it('tells an agent without the permission that they may not round up', function () {
-    Settings::set('currency.margin_bp', 100);
+it('quotes a payout typed in euros, converted at the market rate', function () {
+    Settings::set('currency.margin_bp', 0);
 
+    // "He must receive €100" — paid out as $108, collected as €100 + fee.
     $this->actingAs(sendingAgent())
-        ->postJson('/transfers/quote', ['mode' => 'receive', 'currency' => 'EUR', 'amount' => '100'])
+        ->postJson('/transfers/quote', [
+            'mode' => 'receive',
+            'currency' => 'EUR',
+            'payout_currency' => 'EUR',
+            'amount' => '100',
+        ])
         ->assertOk()
-        ->assertJsonPath('can_round_up', false);
+        ->assertJson([
+            'amount_cents' => 10800,
+            'payout_original_cents' => 10000,
+            'fee_cents' => 540,
+            'collect_original_cents' => 10500,
+        ]);
 });
 
 it('rejects an inactive currency', function () {
