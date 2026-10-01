@@ -21,6 +21,7 @@ return [
     'currency' => [
         'margin_bp' => 0,
         'max_rate_age_hours' => 72,
+        'max_round_up_bp' => 500, // most an agent may add to the amount collected (5%)
     ],
 
     'payout' => [

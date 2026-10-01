@@ -40,7 +40,7 @@ it('blocks users without transfers.create', function () {
 
 it('returns a correct USD quote', function () {
     $this->actingAs(sendingAgent())
-        ->postJson('/transfers/quote', ['currency' => 'USD', 'amount' => '100'])
+        ->postJson('/transfers/quote', ['mode' => 'receive', 'currency' => 'USD', 'amount' => '100'])
         ->assertOk()
         ->assertJson([
             'amount_cents' => 10000,
@@ -55,15 +55,39 @@ it('returns a correct EUR quote using the configured margin', function () {
     Settings::set('currency.margin_bp', 100);
 
     $this->actingAs(sendingAgent())
-        ->postJson('/transfers/quote', ['currency' => 'EUR', 'amount' => '120'])
+        ->postJson('/transfers/quote', ['mode' => 'receive', 'currency' => 'EUR', 'amount' => '120'])
         ->assertOk()
         ->assertJson([
-            'amount_cents' => 12830,
-            'fee_cents' => 642,
-            'collect_original_cents' => 12600,
-            'fx_income_cents' => 136,
-            'total_debit_cents' => 13608,
+            'amount_cents' => 12000,
+            'fee_cents' => 600,
+            'collect_original_cents' => 11785,
+            'fx_income_cents' => 128,
+            'total_debit_cents' => 12728,
         ]);
+});
+
+it('quotes the other way round when the customer names what they pay', function () {
+    Settings::set('currency.margin_bp', 100);
+
+    $this->actingAs(sendingAgent())
+        ->postJson('/transfers/quote', ['mode' => 'pay', 'currency' => 'EUR', 'amount' => '100'])
+        ->assertOk()
+        ->assertJson([
+            'amount_cents' => 10183,
+            'fee_cents' => 509,
+            'collect_original_cents' => 10000,
+            'fx_income_cents' => 108,
+            'total_debit_cents' => 10800,
+        ]);
+});
+
+it('tells an agent without the permission that they may not round up', function () {
+    Settings::set('currency.margin_bp', 100);
+
+    $this->actingAs(sendingAgent())
+        ->postJson('/transfers/quote', ['mode' => 'receive', 'currency' => 'EUR', 'amount' => '100'])
+        ->assertOk()
+        ->assertJsonPath('can_round_up', false);
 });
 
 it('rejects an inactive currency', function () {

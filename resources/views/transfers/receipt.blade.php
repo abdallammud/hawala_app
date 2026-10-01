@@ -114,9 +114,17 @@
             <td>{{ __('Fee') }}</td>
             <td class="num">{{ \App\Support\Money::format($transfer->fee_cents) }}</td>
         </tr>
+        {{-- What the customer actually handed over: their own currency when
+             there is an FX leg, otherwise the USD total. --}}
         <tr class="total">
-            <td>{{ __('Total') }}</td>
-            <td class="num">{{ \App\Support\Money::format($transfer->total_debit_cents) }}</td>
+            <td>{{ __('Total paid by sender') }}</td>
+            <td class="num">
+                @if ($transfer->original_currency !== 'USD')
+                    {{ \App\Support\Money::format($transfer->collect_original_cents, $transfer->original_currency) }}
+                @else
+                    {{ \App\Support\Money::format($transfer->total_debit_cents) }}
+                @endif
+            </td>
         </tr>
     </table>
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\LedgerAccountType;
+use App\Enums\QuoteMode;
 use App\Enums\TransferStatus;
 use App\Exceptions\Ledger\InsufficientBalanceException;
 use App\Exceptions\Transfers\TransferStateException;
@@ -253,12 +254,38 @@ it('creates a non-USD transfer with the snapshotted rate', function () {
         $agent, $this->branch, H::transferPayload(['currency' => 'EUR', 'amount_cents' => 12000]), (string) Str::uuid()
     );
 
+    // Receive mode: $120 is what the receiver gets, collected in euros.
     expect($transfer->original_currency)->toBe('EUR')
-        ->and($transfer->original_amount_cents)->toBe(12000)
-        ->and($transfer->amount_cents)->toBe(12830)
-        ->and($transfer->fx_income_cents)->toBe(136)
+        ->and($transfer->quote_mode)->toBe(QuoteMode::Receive)
+        ->and($transfer->amount_cents)->toBe(12000)
+        ->and($transfer->fee_cents)->toBe(600)
+        ->and($transfer->collect_original_cents)->toBe(11785)
+        ->and($transfer->original_amount_cents)->toBe(11224)
+        ->and($transfer->fx_income_cents)->toBe(128)
         ->and($transfer->margin_bp)->toBe(100)
         ->and((float) $transfer->market_rate)->toBe(1.08)
         // total_debit must equal amount + fee + fx (verify-ledger check 6)
+        ->and($transfer->total_debit_cents)->toBe($transfer->amount_cents + $transfer->fee_cents + $transfer->fx_income_cents);
+});
+
+it('creates a non-USD transfer from what the customer hands over', function () {
+    Settings::set('currency.margin_bp', 100);
+    $agent = H::sendingAgent(fundCents: 1000000);
+
+    // Pay mode: €100 in the hand, fee inside, receiver gets the rest in USD.
+    $transfer = app(TransferService::class)->create(
+        $agent,
+        $this->branch,
+        H::transferPayload(['currency' => 'EUR', 'amount_cents' => 10000, 'mode' => QuoteMode::Pay]),
+        (string) Str::uuid(),
+    );
+
+    expect($transfer->quote_mode)->toBe(QuoteMode::Pay)
+        ->and($transfer->collect_original_cents)->toBe(10000)
+        ->and($transfer->amount_cents)->toBe(10183)
+        ->and($transfer->fee_cents)->toBe(509)
+        ->and($transfer->fx_income_cents)->toBe(108)
+        // Every cent the euros were worth is on the transfer.
+        ->and($transfer->total_debit_cents)->toBe(10800)
         ->and($transfer->total_debit_cents)->toBe($transfer->amount_cents + $transfer->fee_cents + $transfer->fx_income_cents);
 });

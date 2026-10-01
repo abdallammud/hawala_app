@@ -86,10 +86,12 @@ transfers
   sender_name, sender_phone, receiver_name, receiver_phone,
   receiver_account_type_id nullable, receiver_account_number nullable,
   original_currency char(3), original_amount_cents,          -- what customer is sending, in their currency
+  quote_mode ('pay'|'receive'),                              -- which leg the agent typed (§7)
   market_rate decimal(18,8), margin_bp int, customer_rate decimal(18,8),
   amount_cents,                                              -- USD the receiver gets
   fee_cents, fx_income_cents, total_debit_cents,             -- total_debit = amount + fee + fx_income
   collect_original_cents,                                    -- total to collect from customer in their currency
+  round_up_original_cents,                                   -- extra the agent added to it (§7), 0 normally
   sending_share_cents, payout_share_cents nullable, company_share_cents nullable,
   fee_snapshot json, commission_snapshot json,
   status enum(awaiting_approval, queued, claimed, paid, cancelled, rejected),
@@ -336,20 +338,41 @@ Example: fee 500 → sending 50% = 250 → remaining 250 → payout 20% = 50 →
   ("Exchange rate for EUR is out of date. Ask admin to set a manual rate.").
 - Seed currencies: USD, EUR, GBP, SEK, NOK, DKK, CHF (USD, EUR, GBP, SEK, NOK active).
 
-**Transfer maths** (agent enters `original_amount` in currency C = what the receiver should get, in C):
+**Transfer maths** — the agent says which leg the customer named (`QuoteMode`), and the
+other leg is derived. Everything stored is USD either way.
+
 ```
 market_rate    = RateService::current(C)
-customer_rate  = market_rate × (1 − margin_bp/10000)
-amount         = round(original × customer_rate)                 // USD receiver gets
-fee            = FeeCalculator(amount)
-fee_original   = round(fee / customer_rate)                      // fee in C
-collect_orig   = original + fee_original                         // show agent: "Collect €X from customer"
-market_value   = round(collect_orig × market_rate)               // USD value of cash collected
-fx_income      = margin_bp == 0 ? 0 : max(0, market_value − amount − fee)   // cent rounding never creates income
-total_debit    = amount + fee + fx_income
+customer_rate  = market_rate × (1 − margin_bp/10000)        // 8 dp, the stored precision
+
+receive mode — "he must get $100 in Banadir":
+  amount       = typed, in USD
+  fee          = FeeCalculator(amount)
+  collect_min  = ceil((amount + fee) / customer_rate)       // round UP: never a cent short
+  collect_orig = collect_min + round_up                     // agent may raise it, see below
+
+pay mode — "here is €100, send it" (the fee comes out of the €100):
+  collect_orig = typed, in C
+  budget       = round(collect_orig × customer_rate)        // USD the cash buys
+  amount, fee  = FeeCalculator::inverse(budget)             // biggest payout whose fee fits
+
+both:
+  fee_original = round(fee / customer_rate)                 // fee in C
+  original     = collect_orig − fee_original                // so collect = original + fee_original
+  market_value = round(collect_orig × market_rate)          // USD value of cash collected
+  fx_income    = max(0, market_value − amount − fee)        // the spread + any round-up
+  total_debit  = amount + fee + fx_income
 ```
-For USD, `rate = 1`, `fx_income = 0`. Top-ups and repayments in other currencies convert at
-`market_rate` (no margin).
+
+For USD, `rate = 1`, `fx_income = 0`, and in pay mode `collect_orig` is trimmed to
+`amount + fee` so no cent sits outside the ledger. Top-ups and repayments in other
+currencies convert at `market_rate` (no margin).
+
+**Round-up** (receive mode, non-USD only): the computed `collect_min` is often an ugly
+figure, so an agent holding `transfers.round_collect` may collect a rounder one — €94.93 →
+€95.00. The difference is stored in `round_up_original_cents` and lands in `fx_income`; the
+receiver's payout is untouched. It is capped at `currency.max_round_up_bp` of `collect_min`
+(default 5%), checked in the Form Request and clamped again in `TransferService`.
 
 ---
 
@@ -445,7 +468,7 @@ dashboard.view
 transfers.create, transfers.view_own, transfers.view_branch, transfers.view_all,
 transfers.cancel_own, transfers.request_cancel, transfers.cancel_any,
 transfers.approve_cancel, transfers.approve_large,
-transfers.record_collection, transfers.export
+transfers.record_collection, transfers.export, transfers.round_collect
 queue.view, queue.claim, queue.mark_paid, queue.force_assign, queue.unassign
 balances.request, balances.approve, balances.give_credit, balances.record_repayment,
 balances.fund_payout, balances.view_all

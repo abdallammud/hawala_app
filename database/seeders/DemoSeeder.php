@@ -5,10 +5,13 @@ namespace Database\Seeders;
 use App\Enums\CommissionType;
 use App\Enums\JournalType;
 use App\Enums\LedgerAccountType;
+use App\Enums\QuoteMode;
 use App\Enums\UserType;
 use App\Models\AccountType;
 use App\Models\Branch;
 use App\Models\CompanyAccount;
+use App\Models\Currency;
+use App\Models\ExchangeRate;
 use App\Models\PayoutAccount;
 use App\Models\Transfer;
 use App\Models\User;
@@ -279,6 +282,10 @@ class DemoSeeder extends Seeder
         $senderNames = ['Yasin Ahmed', 'Deqa Hussein', 'Bashir Ali', 'Muna Abdullahi'];
         $evcPlus = AccountType::query()->where('name', 'EVC Plus')->first();
 
+        // A euro rate and a margin, so the demo has a real FX leg: agents in
+        // Europe mostly hold euros, and both quoting directions appear below.
+        $this->seedEuroRate();
+
         for ($i = 0; $i < 40; $i++) {
             $agent = $senders[$i % count($senders)];
             $branchName = $i % 4 === 3 ? 'Hargeisa' : 'Mogadishu';
@@ -287,6 +294,11 @@ class DemoSeeder extends Seeder
 
             // $40 to $520, in round amounts an agent would actually type.
             $amountCents = (4000 + ($i % 13) * 4000);
+
+            // Every third one is paid for in euros: half of those are "here is
+            // €X" (pay), half are "he must receive $Y" (receive).
+            $inEuros = $i % 3 === 1;
+            $mode = ($inEuros && $i % 6 === 1) ? QuoteMode::Pay : QuoteMode::Receive;
 
             // Every fifth one is left uncollected at the counter.
             $isUncollected = $i % 9 === 4;
@@ -298,8 +310,9 @@ class DemoSeeder extends Seeder
                 'receiver_phone' => $receiver[1],
                 'receiver_account_type_id' => $i % 3 === 0 ? $evcPlus?->id : null,
                 'receiver_account_number' => $i % 3 === 0 ? '61'.str_pad((string) (1000000 + $i), 7, '0', STR_PAD_LEFT) : null,
-                'currency' => 'USD',
-                'amount_cents' => $amountCents,
+                'currency' => $inEuros ? 'EUR' : 'USD',
+                'mode' => $mode,
+                'amount_cents' => $mode === QuoteMode::Pay ? intdiv($amountCents * 100, 108) : $amountCents,
                 'is_uncollected' => $isUncollected,
                 'note' => null,
             ], (string) Str::uuid());
@@ -310,6 +323,19 @@ class DemoSeeder extends Seeder
 
             $this->advance($transfer, $i, $payers, $branchName, $queue, $cancellations, $admin);
         }
+    }
+
+    /** One manual EUR rate and a 1.5% margin — enough for the FX reports. */
+    private function seedEuroRate(): void
+    {
+        Currency::query()->where('code', 'EUR')->update(['is_active' => true, 'manual_rate' => '1.08000000']);
+
+        ExchangeRate::query()->firstOrCreate(
+            ['currency' => 'EUR', 'source' => 'demo'],
+            ['rate_to_usd' => '1.08000000', 'fetched_at' => now()],
+        );
+
+        Settings::set('currency.margin_bp', 150);
     }
 
     /** Move a transfer into one of the statuses a real queue contains. */

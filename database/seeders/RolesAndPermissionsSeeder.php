@@ -18,7 +18,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'transfers.create', 'transfers.view_own', 'transfers.view_branch', 'transfers.view_all',
         'transfers.cancel_own', 'transfers.request_cancel', 'transfers.cancel_any',
         'transfers.approve_cancel', 'transfers.approve_large',
-        'transfers.record_collection', 'transfers.export',
+        'transfers.record_collection', 'transfers.export', 'transfers.round_collect',
 
         'queue.view', 'queue.claim', 'queue.mark_paid', 'queue.force_assign', 'queue.unassign',
 

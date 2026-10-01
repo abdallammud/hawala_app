@@ -35,7 +35,8 @@ class SettingsController extends Controller
             'commission_payout_value' => ['required', 'integer', 'min:0'],
             'commission_move_requires_approval' => ['boolean'],
 
-            'currency_margin_bp' => ['required', 'integer', 'min:0', 'max:10000'],
+            'currency_margin_bp' => ['required', 'integer', 'min:0', 'max:5000'],
+            'currency_max_round_up_bp' => ['required', 'integer', 'min:0', 'max:5000'],
             'currency_max_rate_age_hours' => ['required', 'integer', 'min:1'],
 
             'payout_claim_minutes' => ['required', 'integer', 'min:1'],
@@ -70,6 +71,7 @@ class SettingsController extends Controller
         Settings::set('commission.move_requires_approval', $request->boolean('commission_move_requires_approval'), $updatedBy);
 
         Settings::set('currency.margin_bp', (int) $validated['currency_margin_bp'], $updatedBy);
+        Settings::set('currency.max_round_up_bp', (int) $validated['currency_max_round_up_bp'], $updatedBy);
         Settings::set('currency.max_rate_age_hours', (int) $validated['currency_max_rate_age_hours'], $updatedBy);
 
         Settings::set('payout.claim_minutes', (int) $validated['payout_claim_minutes'], $updatedBy);

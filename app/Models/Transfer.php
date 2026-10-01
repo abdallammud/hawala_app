@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\QuoteMode;
 use App\Enums\TransferStatus;
 use App\Support\Settings;
 use Illuminate\Database\Eloquent\Builder;
@@ -16,8 +17,9 @@ class Transfer extends Model
         'code', 'idempotency_key', 'sending_agent_id', 'branch_id',
         'sender_name', 'sender_phone', 'receiver_name', 'receiver_phone',
         'receiver_account_type_id', 'receiver_account_number',
-        'original_currency', 'original_amount_cents', 'market_rate', 'margin_bp', 'customer_rate',
+        'original_currency', 'quote_mode', 'original_amount_cents', 'market_rate', 'margin_bp', 'customer_rate',
         'amount_cents', 'fee_cents', 'fx_income_cents', 'total_debit_cents', 'collect_original_cents',
+        'round_up_original_cents',
         'sending_share_cents', 'payout_share_cents', 'company_share_cents',
         'fee_snapshot', 'commission_snapshot', 'status', 'is_large',
         'claimed_by', 'claimed_at', 'claim_expires_at', 'assigned_by',
@@ -30,6 +32,7 @@ class Transfer extends Model
     {
         return [
             'status' => TransferStatus::class,
+            'quote_mode' => QuoteMode::class,
             'fee_snapshot' => 'array',
             'commission_snapshot' => 'array',
             'is_large' => 'boolean',

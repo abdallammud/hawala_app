@@ -28,6 +28,7 @@ function postTransfer(array $overrides = []): array
         'receiver_name' => 'Farah Omar',
         'receiver_phone' => '+252611234567',
         'currency' => 'USD',
+        'mode' => 'receive',
         'amount' => '100',
         'confirm_duplicate' => '1',
     ], $overrides);

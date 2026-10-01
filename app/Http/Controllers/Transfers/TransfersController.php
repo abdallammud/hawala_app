@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Transfers;
 use App\Enums\TransferStatus;
 use App\Exceptions\Ledger\InsufficientBalanceException;
 use App\Exceptions\Rates\RateUnavailableException;
+use App\Exceptions\Transfers\AmountTooSmallException;
 use App\Exceptions\Transfers\TransferStateException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Transfers\StoreTransferRequest;
@@ -83,11 +84,18 @@ class TransfersController extends Controller
         $agent = $request->user();
         $branch = Branch::findOrFail($request->integer('branch_id'));
         $amountCents = Money::parseCents($request->string('amount'));
+        $mode = $request->mode();
 
         // Duplicate warning is a speed bump, not a block: the agent resubmits
         // with confirm_duplicate once they've seen it (BUILD.md §8).
         if (! $request->boolean('confirm_duplicate')) {
-            $duplicate = $this->transfers->findRecentDuplicate($agent, $request->string('receiver_phone'), $amountCents);
+            $duplicate = $this->transfers->findRecentDuplicate(
+                $agent,
+                $request->string('receiver_phone'),
+                $amountCents,
+                $mode,
+                $request->string('currency'),
+            );
 
             if ($duplicate) {
                 return back()->withInput()->with('duplicate_warning', __(
@@ -110,7 +118,9 @@ class TransfersController extends Controller
                 'receiver_account_type_id' => $request->input('receiver_account_type_id'),
                 'receiver_account_number' => $request->input('receiver_account_number'),
                 'currency' => $request->string('currency'),
+                'mode' => $mode,
                 'amount_cents' => $amountCents,
+                'round_up_cents' => $request->roundUpCents(),
                 'is_uncollected' => $request->boolean('is_uncollected'),
                 'note' => $request->input('note'),
             ], $request->string('idempotency_key'));
@@ -118,6 +128,8 @@ class TransfersController extends Controller
             return back()->withInput()->with('insufficient_balance', $e->getMessage());
         } catch (RateUnavailableException $e) {
             return back()->withInput()->withErrors(['currency' => $e->getMessage()]);
+        } catch (AmountTooSmallException $e) {
+            return back()->withInput()->withErrors(['amount' => $e->getMessage()]);
         }
 
         return redirect()->route('transfers.show', $transfer)
