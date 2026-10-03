@@ -199,6 +199,14 @@ It is safe to re-run and will not overwrite a setting you have since changed.
 Now log in as the super admin, then **remove `SUPER_ADMIN_PASSWORD` from
 `.env`** and run `php artisan config:cache` again.
 
+**Customer demo server:** run `CustomerDemoSeeder` *instead of*
+`ProductionSeeder` (only `SUPER_ADMIN_PASSWORD` is needed). It adds the
+Mogadishu (Banadir) branch, the Brussels Office and Mogadishu Office company
+accounts ($20,000 opening capital in Mogadishu), and two super admins who also
+act as agents: `omar@bluestar.so` (sending agent) and `yusuf@bluestar.so`
+(payout agent, Mogadishu). Both agents start at $0, so the demo starts with a
+top-up. It also fetches exchange rates once.
+
 Never run `DemoSeeder` on production. It refuses to run when
 `APP_ENV=production`, but do not rely on that.
 

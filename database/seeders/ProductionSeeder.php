@@ -25,6 +25,13 @@ class ProductionSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->baseline();
+        $this->superAdmin();
+    }
+
+    /** Everything except the login — shared with CustomerDemoSeeder. */
+    protected function baseline(): void
+    {
         $this->call([
             RolesAndPermissionsSeeder::class,
             SmsTemplatesSeeder::class,
@@ -35,7 +42,6 @@ class ProductionSeeder extends Seeder
         $this->accountTypes();
         $this->feeTiers();
         $this->defaultSettings();
-        $this->superAdmin();
     }
 
     /** One each of the six system accounts (BUILD.md §2). */
