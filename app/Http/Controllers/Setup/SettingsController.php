@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers\Setup;
 
+use App\Enums\SmsProvider;
 use App\Http\Controllers\Controller;
+use App\Services\Sms\GatewayCredentials;
+use App\Services\Sms\HormuudDriver;
 use App\Support\Money;
 use App\Support\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
@@ -15,7 +20,24 @@ class SettingsController extends Controller
     {
         $this->authorize('setup.settings');
 
-        return view('setup.settings.edit', ['settings' => Settings::all()]);
+        $settings = Settings::all();
+
+        // Passwords never go back to the browser; the form only needs to know
+        // whether one is saved.
+        foreach (SmsProvider::cases() as $gateway) {
+            $stored = (array) ($settings['sms'][$gateway->value] ?? []);
+            $credentials = GatewayCredentials::forProvider($gateway);
+
+            $settings['sms'][$gateway->value] = [
+                'username' => $credentials->username,
+                'password_saved' => $credentials->password !== '',
+                'sender_id' => $credentials->senderId,
+                // Blank means "provider default"; keep it blank in the form.
+                'api_url' => trim((string) ($stored['api_url'] ?? '')),
+            ];
+        }
+
+        return view('setup.settings.edit', ['settings' => $settings]);
     }
 
     public function update(Request $request): RedirectResponse
@@ -36,7 +58,6 @@ class SettingsController extends Controller
             'commission_move_requires_approval' => ['boolean'],
 
             'currency_margin_bp' => ['required', 'integer', 'min:0', 'max:5000'],
-            'currency_max_round_up_bp' => ['required', 'integer', 'min:0', 'max:5000'],
             'currency_max_rate_age_hours' => ['required', 'integer', 'min:1'],
 
             'payout_claim_minutes' => ['required', 'integer', 'min:1'],
@@ -46,8 +67,15 @@ class SettingsController extends Controller
             'credit_default_max' => ['nullable', 'numeric', 'min:0'],
 
             'sms_enabled' => ['boolean'],
-            'sms_driver' => ['required', 'in:log,http'],
-            'sms_http' => ['nullable', 'string', 'json'],
+            'sms_driver' => ['nullable', Rule::enum(SmsProvider::class)],
+            'sms_tabaarak_username' => ['nullable', 'string', 'max:100'],
+            'sms_tabaarak_password' => ['nullable', 'string', 'max:255'],
+            'sms_tabaarak_sender_id' => ['nullable', 'string', 'max:20'],
+            'sms_tabaarak_api_url' => ['nullable', 'url:http,https', 'max:255'],
+            'sms_hormuud_username' => ['nullable', 'string', 'max:100'],
+            'sms_hormuud_password' => ['nullable', 'string', 'max:255'],
+            'sms_hormuud_sender_id' => ['nullable', 'string', 'max:'.HormuudDriver::MAX_SENDER_ID],
+            'sms_hormuud_api_url' => ['nullable', 'url:http,https', 'max:255'],
 
             'receipts_enabled' => ['boolean'],
 
@@ -55,6 +83,9 @@ class SettingsController extends Controller
             'general_timezone' => ['required', 'string', 'max:64'],
             'general_duplicate_warning_minutes' => ['required', 'integer', 'min:0'],
         ]);
+
+        $gateways = $this->gatewaySettings($request);
+        $this->ensureActiveGatewayReady($request, $gateways);
 
         $updatedBy = $request->user()->id;
 
@@ -71,7 +102,6 @@ class SettingsController extends Controller
         Settings::set('commission.move_requires_approval', $request->boolean('commission_move_requires_approval'), $updatedBy);
 
         Settings::set('currency.margin_bp', (int) $validated['currency_margin_bp'], $updatedBy);
-        Settings::set('currency.max_round_up_bp', (int) $validated['currency_max_round_up_bp'], $updatedBy);
         Settings::set('currency.max_rate_age_hours', (int) $validated['currency_max_rate_age_hours'], $updatedBy);
 
         Settings::set('payout.claim_minutes', (int) $validated['payout_claim_minutes'], $updatedBy);
@@ -81,10 +111,11 @@ class SettingsController extends Controller
         Settings::set('credit.default_max_cents', $request->filled('credit_default_max') ? Money::parseCents((string) $validated['credit_default_max']) : null, $updatedBy);
 
         Settings::set('sms.enabled', $request->boolean('sms_enabled'), $updatedBy);
-        Settings::set('sms.driver', $validated['sms_driver'], $updatedBy);
-        // Stored as a decoded array so HttpDriver can read it without
-        // decoding a string every send.
-        Settings::set('sms.http', json_decode($validated['sms_http'] ?: '{}', true), $updatedBy);
+        Settings::set('sms.driver', $validated['sms_driver'] ?? null, $updatedBy);
+
+        foreach ($gateways as $provider => $values) {
+            Settings::set("sms.{$provider}", $values, $updatedBy);
+        }
 
         Settings::set('receipts.enabled', $request->boolean('receipts_enabled'), $updatedBy);
 
@@ -93,5 +124,58 @@ class SettingsController extends Controller
         Settings::set('general.duplicate_warning_minutes', (int) $validated['general_duplicate_warning_minutes'], $updatedBy);
 
         return back()->with('status', __('Settings saved.'));
+    }
+
+    /**
+     * Both gateways' accounts as they will be stored. A blank password box
+     * keeps the saved one (passwords are never sent back to the form).
+     *
+     * @return array<string, array{username: string, password: string, sender_id: string, api_url: string}>
+     */
+    private function gatewaySettings(Request $request): array
+    {
+        $out = [];
+
+        foreach (SmsProvider::cases() as $gateway) {
+            $p = $gateway->value;
+            $stored = (array) Settings::get("sms.{$p}", []);
+            $password = (string) $request->input("sms_{$p}_password", '');
+
+            $out[$p] = [
+                'username' => trim((string) $request->input("sms_{$p}_username", '')),
+                'password' => $password !== '' ? GatewayCredentials::encrypt($password) : (string) ($stored['password'] ?? ''),
+                'sender_id' => trim((string) $request->input("sms_{$p}_sender_id", '')),
+                'api_url' => trim((string) $request->input("sms_{$p}_api_url", '')),
+            ];
+        }
+
+        return $out;
+    }
+
+    /** Refuse to switch SMS on with a half-configured gateway. */
+    private function ensureActiveGatewayReady(Request $request, array $gateways): void
+    {
+        if (! $request->boolean('sms_enabled')) {
+            return;
+        }
+
+        $provider = SmsProvider::tryFrom((string) $request->input('sms_driver'))
+            ?? throw ValidationException::withMessages([
+                'sms_driver' => __('Select an SMS provider before switching SMS on.'),
+            ]);
+
+        $values = $gateways[$provider->value];
+
+        if ($values['username'] === '' || $values['password'] === '') {
+            throw ValidationException::withMessages([
+                "sms_{$provider->value}_username" => __('Add the username and password for :provider before switching SMS on.', ['provider' => $provider->label()]),
+            ]);
+        }
+
+        if ($provider->requiresSenderId() && $values['sender_id'] === '') {
+            throw ValidationException::withMessages([
+                "sms_{$provider->value}_sender_id" => __(':provider needs a sender name before SMS can be switched on.', ['provider' => $provider->label()]),
+            ]);
+        }
     }
 }

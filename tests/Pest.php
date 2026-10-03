@@ -2,7 +2,11 @@
 
 use App\Enums\UserType;
 use App\Models\User;
+use App\Services\Sms\GatewayCredentials;
+use App\Services\Sms\TokenGatewayDriver;
+use App\Support\Settings;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /*
@@ -64,4 +68,28 @@ function makeSuperAdmin(): User
     $superAdmin->assignRole('super-admin');
 
     return $superAdmin;
+}
+
+/** Select an SMS gateway with a saved (fake) account. */
+function useGateway(string $provider, array $account = []): void
+{
+    Settings::set('sms.driver', $provider);
+    Settings::set("sms.{$provider}", array_merge([
+        'username' => 'bluestar',
+        'password' => GatewayCredentials::encrypt('s3cret'),
+        'sender_id' => 'BLUESTAR',
+        'api_url' => '',
+    ], $account));
+}
+
+/** Tabaarak selected and answering every login and send with success. */
+function fakeTabaarak(): void
+{
+    TokenGatewayDriver::flushTokens();
+    useGateway('tabaarak');
+
+    Http::fake([
+        'sms.tabaarak.com/Auth/SMSLogin' => Http::response(['data' => ['token' => 'tok']]),
+        'sms.tabaarak.com/Sms/sendsms' => Http::response(['success' => true, 'message' => 'Sent']),
+    ]);
 }

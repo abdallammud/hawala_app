@@ -16,16 +16,17 @@ class Settings
 
     public static function all(): array
     {
-        return Cache::rememberForever(self::CACHE_KEY, function () {
-            $defaults = config('hawala');
-            $stored = Setting::query()->get()->pluck('value', 'key');
+        // Only the stored rows are cached; defaults are merged on every call
+        // so a key added to config/hawala.php shows up without a cache clear.
+        $stored = Cache::rememberForever(self::CACHE_KEY, fn () => Setting::query()->get()->pluck('value', 'key')->all());
 
-            foreach ($stored as $key => $value) {
-                Arr::set($defaults, $key, $value);
-            }
+        $settings = config('hawala');
 
-            return $defaults;
-        });
+        foreach ($stored as $key => $value) {
+            Arr::set($settings, $key, $value);
+        }
+
+        return $settings;
     }
 
     public static function get(string $key, mixed $default = null): mixed

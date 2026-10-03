@@ -14,6 +14,7 @@ use App\Http\Controllers\Setup\CurrenciesController;
 use App\Http\Controllers\Setup\FeeTiersController;
 use App\Http\Controllers\Setup\SettingsController;
 use App\Http\Controllers\Setup\SetupController;
+use App\Http\Controllers\Setup\SmsConnectionTestController;
 use App\Http\Controllers\Setup\SmsTemplatesController;
 use App\Http\Controllers\Transfers\CancellationRequestsController;
 use App\Http\Controllers\Transfers\PayoutQueueController;
@@ -104,6 +105,7 @@ Route::middleware('auth')->group(function () {
     Route::prefix('setup/settings')->middleware('can:setup.settings')->name('setup.settings.')->group(function () {
         Route::get('/', [SettingsController::class, 'edit'])->name('edit');
         Route::put('/', [SettingsController::class, 'update'])->name('update');
+        Route::post('/sms-test', SmsConnectionTestController::class)->middleware('throttle:10,1')->name('sms-test');
     });
 
     // --- Transfers -----------------------------------------------------------

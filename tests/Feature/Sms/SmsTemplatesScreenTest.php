@@ -4,6 +4,7 @@ use App\Enums\SmsEvent;
 use App\Models\SmsLog;
 use App\Models\SmsTemplate;
 use App\Models\User;
+use App\Services\Sms\TokenGatewayDriver;
 use App\Support\Settings;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\SmsTemplatesSeeder;
@@ -82,9 +83,9 @@ it('requires a body', function () {
         ->assertSessionHasErrors('body');
 });
 
-it('sends a test message through the log driver without logging or enabling SMS', function () {
+it('sends a test message through the gateway without logging or enabling SMS', function () {
     Settings::set('sms.enabled', false);
-    Settings::set('sms.driver', 'log');
+    fakeTabaarak();
 
     $this->actingAs(makeSuperAdmin())
         ->post(route('setup.sms-templates.test', $this->template), ['test_phone' => '+252612345678'])
@@ -96,10 +97,13 @@ it('sends a test message through the log driver without logging or enabling SMS'
 });
 
 it('reports a gateway failure back on the form instead of throwing', function () {
-    Settings::set('sms.driver', 'http');
-    Settings::set('sms.http', ['url' => 'https://gw.test/send', 'params' => ['to' => '{to}']]);
+    TokenGatewayDriver::flushTokens();
+    useGateway('hormuud');
 
-    Http::fake(['gw.test/*' => Http::response('no credit', 402)]);
+    Http::fake([
+        '*/token' => Http::response(['access_token' => 'tok']),
+        '*/api/SendSMS' => Http::response(['ResponseCode' => '204', 'Data' => ['Description' => 'Zero Balance!!']]),
+    ]);
 
     $this->actingAs(makeSuperAdmin())
         ->post(route('setup.sms-templates.test', $this->template), ['test_phone' => '+252612345678'])

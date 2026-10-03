@@ -21,7 +21,6 @@ return [
     'currency' => [
         'margin_bp' => 0,
         'max_rate_age_hours' => 72,
-        'max_round_up_bp' => 500, // most an agent may add to the amount collected (5%)
     ],
 
     'payout' => [
@@ -36,8 +35,11 @@ return [
 
     'sms' => [
         'enabled' => false,
-        'driver' => 'log', // 'log' | 'http'
-        'http' => [],
+        'driver' => null, // App\Enums\SmsProvider: 'tabaarak' | 'hormuud'; null = not chosen yet
+        // Each gateway keeps its own account so switching driver needs no
+        // retyping. Password is encrypted; blank api_url = provider default.
+        'tabaarak' => ['username' => '', 'password' => '', 'sender_id' => '', 'api_url' => ''],
+        'hormuud' => ['username' => '', 'password' => '', 'sender_id' => '', 'api_url' => ''],
     ],
 
     'receipts' => [

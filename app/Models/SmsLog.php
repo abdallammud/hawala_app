@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SmsLog extends Model
 {
-    protected $fillable = ['to', 'body', 'status', 'provider_response', 'transfer_id', 'event'];
+    protected $fillable = ['to', 'body', 'status', 'provider_response', 'transfer_id', 'event', 'provider'];
 
     protected function casts(): array
     {

@@ -4,11 +4,10 @@ use App\Enums\SmsEvent;
 use App\Enums\SmsStatus;
 use App\Models\SmsLog;
 use App\Models\SmsTemplate;
-use App\Services\Sms\HttpDriver;
-use App\Services\Sms\LogDriver;
-use App\Services\Sms\SmsDeliveryException;
+use App\Services\Sms\HormuudDriver;
 use App\Services\Sms\SmsSender;
 use App\Services\Sms\SmsTemplateRenderer;
+use App\Services\Sms\TabaarakDriver;
 use App\Services\Transfers\PayoutQueueService;
 use App\Services\Transfers\TransferCancellationService;
 use App\Services\Transfers\TransferService;
@@ -25,6 +24,7 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(SmsTemplatesSeeder::class);
     $this->branch = H::seedReferenceData();
+    fakeTabaarak();
 });
 
 function activate(SmsEvent $event): SmsTemplate
@@ -87,7 +87,6 @@ it('sends nothing when the template is inactive', function () {
 
 it('logs one message per recipient when a transfer is sent', function () {
     Settings::set('sms.enabled', true);
-    Settings::set('sms.driver', 'log');
 
     // Seeded template targets sender + receiver.
     activate(SmsEvent::TransferSent);
@@ -102,7 +101,10 @@ it('logs one message per recipient when a transfer is sent', function () {
 
     expect($logs)->toHaveCount(2)
         ->and($logs->pluck('to')->all())->toEqualCanonicalizing([$transfer->sender_phone, $transfer->receiver_phone])
-        ->and($logs->every(fn (SmsLog $l) => $l->status === SmsStatus::Sent))->toBeTrue()
+        // The Somali receiver gets it; the gateway cannot reach the +46 sender.
+        ->and($logs->firstWhere('to', $transfer->receiver_phone)->status)->toBe(SmsStatus::Sent)
+        ->and($logs->firstWhere('to', $transfer->sender_phone)->status)->toBe(SmsStatus::Failed)
+        ->and($logs->firstWhere('to', $transfer->sender_phone)->provider_response)->toContain('not a valid Somali mobile number')
         ->and($logs->first()->transfer_id)->toBe($transfer->id)
         ->and($logs->first()->event)->toBe(SmsEvent::TransferSent)
         ->and($logs->first()->body)->toContain($transfer->code)
@@ -154,10 +156,9 @@ it('messages the payout agent when a claim times out', function () {
 
 it('records a failed send instead of breaking the money operation', function () {
     Settings::set('sms.enabled', true);
-    Settings::set('sms.driver', 'http');
-    Settings::set('sms.http', ['url' => 'https://gateway.test/send', 'params' => ['to' => '{to}']]);
 
-    Http::fake(['gateway.test/*' => Http::response('rejected', 500)]);
+    useGateway('tabaarak', ['api_url' => 'https://down.test']);
+    Http::fake(['down.test/*' => Http::response('rejected', 500)]);
 
     activate(SmsEvent::TransferSent);
 
@@ -169,74 +170,37 @@ it('records a failed send instead of breaking the money operation', function () 
     );
 
     expect($transfer->exists)->toBeTrue()
-        ->and(SmsLog::where('status', SmsStatus::Failed)->count())->toBe(2)
-        ->and(SmsLog::first()->provider_response)->toContain('500');
+        ->and(SmsLog::where('status', SmsStatus::Failed)->count())->toBe(2);
 });
 
-it('posts to the configured gateway with the placeholders substituted', function () {
-    Settings::set('sms.driver', 'http');
-    Settings::set('sms.http', [
-        'url' => 'https://gateway.test/send',
-        'method' => 'POST',
-        'send_as' => 'form',
-        'sender_id' => 'BLUESTAR',
-        'headers' => ['X-Key' => 'secret'],
-        'params' => ['to' => '{to}', 'text' => '{message}', 'from' => '{sender_id}'],
-    ]);
+it('fails clearly when no provider has been selected', function () {
+    Settings::set('sms.driver', null);
 
-    Http::fake(['gateway.test/*' => Http::response('OK', 200)]);
+    $log = app(SmsSender::class)->send('+252612345678', 'hi', SmsEvent::TransferSent);
 
-    $response = app(SmsSender::class)->sendTest('+252612345678', 'Hello there');
+    expect($log->status)->toBe(SmsStatus::Failed)
+        ->and($log->provider)->toBeNull();
 
-    expect($response)->toBe('OK');
+    Settings::set('sms.enabled', true);
 
-    Http::assertSent(function ($request) {
-        return $request->url() === 'https://gateway.test/send'
-            && $request->method() === 'POST'
-            && $request->header('X-Key')[0] === 'secret'
-            && $request['to'] === '+252612345678'
-            && $request['text'] === 'Hello there'
-            && $request['from'] === 'BLUESTAR';
-    });
-});
-
-it('treats a 200 response that does not confirm success as a failure', function () {
-    Settings::set('sms.driver', 'http');
-    Settings::set('sms.http', [
-        'url' => 'https://gateway.test/send',
-        'params' => ['to' => '{to}'],
-        'success_contains' => 'OK',
-    ]);
-
-    Http::fake(['gateway.test/*' => Http::response('ERR: no credit', 200)]);
-
-    expect(fn () => app(SmsSender::class)->sendTest('+252612345678', 'hi'))
-        ->toThrow(SmsDeliveryException::class);
-});
-
-it('refuses to send over http with no gateway url configured', function () {
-    Settings::set('sms.driver', 'http');
-    Settings::set('sms.http', []);
-
-    expect(fn () => app(SmsSender::class)->sendTest('+252612345678', 'hi'))
-        ->toThrow(SmsDeliveryException::class);
+    expect(app(SmsSender::class)->send('+252612345678', 'hi', SmsEvent::TransferSent)->provider_response)
+        ->toContain('No SMS provider is selected');
 });
 
 it('picks the driver from settings', function () {
-    Settings::set('sms.driver', 'log');
-    expect(app(SmsSender::class)->driver())->toBeInstanceOf(LogDriver::class);
+    Settings::set('sms.driver', 'tabaarak');
+    expect(app(SmsSender::class)->driver())->toBeInstanceOf(TabaarakDriver::class);
 
-    Settings::set('sms.driver', 'http');
-    expect(app(SmsSender::class)->driver())->toBeInstanceOf(HttpDriver::class);
+    Settings::set('sms.driver', 'hormuud');
+    expect(app(SmsSender::class)->driver())->toBeInstanceOf(HormuudDriver::class);
 });
 
 it('sends a test message even while sms.enabled is off, without logging it', function () {
     Settings::set('sms.enabled', false);
-    Settings::set('sms.driver', 'log');
 
     $response = app(SmsSender::class)->sendTest('+252612345678', 'test');
 
-    expect($response)->toBe('logged')
+    expect($response)->toContain('Sent')
         ->and(SmsLog::count())->toBe(0);
 });
 

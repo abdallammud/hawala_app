@@ -91,7 +91,6 @@ transfers
   amount_cents,                                              -- USD the receiver gets
   fee_cents, fx_income_cents, total_debit_cents,             -- total_debit = amount + fee + fx_income
   collect_original_cents,                                    -- total to collect from customer in their currency
-  round_up_original_cents,                                   -- extra the agent added to it (§7), 0 normally
   sending_share_cents, payout_share_cents nullable, company_share_cents nullable,
   fee_snapshot json, commission_snapshot json,
   status enum(awaiting_approval, queued, claimed, paid, cancelled, rejected),
@@ -173,8 +172,8 @@ Every payout agent gets `agent_payout` and `agent_commission`. System accounts
 | `payout.reference_required` | bool | false | Parked feature, keep the switch |
 | `credit.default_max_cents` | int nullable | null | null = no limit |
 | `sms.enabled` | bool | false | |
-| `sms.driver` | enum `log` / `http` | log | |
-| `sms.http` | json | {} | url, method, headers, param mapping, sender id |
+| `sms.driver` | enum `tabaarak` / `hormuud` | null | null = not chosen; SMS cannot be switched on |
+| `sms.tabaarak`, `sms.hormuud` | json | blank | username, password (encrypted), sender_id, api_url |
 | `receipts.enabled` | bool | false | |
 | `general.company_name` | string | "Blue Star" | |
 | `general.timezone` | string | Africa/Mogadishu | |
@@ -338,20 +337,21 @@ Example: fee 500 → sending 50% = 250 → remaining 250 → payout 20% = 50 →
   ("Exchange rate for EUR is out of date. Ask admin to set a manual rate.").
 - Seed currencies: USD, EUR, GBP, SEK, NOK, DKK, CHF (USD, EUR, GBP, SEK, NOK active).
 
-**Transfer maths** — the agent says which leg the customer named (`QuoteMode`), and the
-other leg is derived. Everything stored is USD either way.
+**Transfer maths** — the form shows both legs at once, each with its own currency:
+"Receiver gets" and "Customer pays". The agent types in whichever one the customer named
+and the other fills itself from the rate; `quote_mode` records which was typed, and the
+server recalculates that leg and ignores the filled-in one. Everything stored is USD.
 
 ```
-market_rate    = RateService::current(C)
+market_rate    = RateService::current(C)                    // C = what the customer pays in
 customer_rate  = market_rate × (1 − margin_bp/10000)        // 8 dp, the stored precision
 
-receive mode — "he must get $100 in Banadir":
-  amount       = typed, in USD
+receive mode — the agent typed "Receiver gets":
+  amount       = typed, converted to USD at the market rate of its own currency P
   fee          = FeeCalculator(amount)
-  collect_min  = ceil((amount + fee) / customer_rate)       // round UP: never a cent short
-  collect_orig = collect_min + round_up                     // agent may raise it, see below
+  collect_orig = ceil((amount + fee) / customer_rate)       // round UP: never a cent short
 
-pay mode — "here is €100, send it" (the fee comes out of the €100):
+pay mode — the agent typed "Customer pays" (the fee comes out of it):
   collect_orig = typed, in C
   budget       = round(collect_orig × customer_rate)        // USD the cash buys
   amount, fee  = FeeCalculator::inverse(budget)             // biggest payout whose fee fits
@@ -360,19 +360,15 @@ both:
   fee_original = round(fee / customer_rate)                 // fee in C
   original     = collect_orig − fee_original                // so collect = original + fee_original
   market_value = round(collect_orig × market_rate)          // USD value of cash collected
-  fx_income    = max(0, market_value − amount − fee)        // the spread + any round-up
+  fx_income    = max(0, market_value − amount − fee)        // the company's spread
   total_debit  = amount + fee + fx_income
 ```
 
 For USD, `rate = 1`, `fx_income = 0`, and in pay mode `collect_orig` is trimmed to
-`amount + fee` so no cent sits outside the ledger. Top-ups and repayments in other
-currencies convert at `market_rate` (no margin).
-
-**Round-up** (receive mode, non-USD only): the computed `collect_min` is often an ugly
-figure, so an agent holding `transfers.round_collect` may collect a rounder one — €94.93 →
-€95.00. The difference is stored in `round_up_original_cents` and lands in `fx_income`; the
-receiver's payout is untouched. It is capped at `currency.max_round_up_bp` of `collect_min`
-(default 5%), checked in the Form Request and clamped again in `TransferService`.
+`amount + fee` so no cent sits outside the ledger. The payout leg's currency `P` is a
+typing convenience only — it converts at the **market** rate, with no margin, because the
+spread belongs to the cash leg; the receiver is always paid the USD `amount`. Top-ups and
+repayments in other currencies also convert at `market_rate`.
 
 ---
 
@@ -468,7 +464,7 @@ dashboard.view
 transfers.create, transfers.view_own, transfers.view_branch, transfers.view_all,
 transfers.cancel_own, transfers.request_cancel, transfers.cancel_any,
 transfers.approve_cancel, transfers.approve_large,
-transfers.record_collection, transfers.export, transfers.round_collect
+transfers.record_collection, transfers.export
 queue.view, queue.claim, queue.mark_paid, queue.force_assign, queue.unassign
 balances.request, balances.approve, balances.give_credit, balances.record_repayment,
 balances.fund_payout, balances.view_all
@@ -552,9 +548,16 @@ respect own/branch/all scope.
 
 ## 13. SMS & receipts
 
-- `App\Services\Sms\SmsSender` with drivers `LogDriver` (writes to `sms_logs` + log file) and
-  `HttpDriver` (generic: URL, method, headers, body/query mapping with `{to}`, `{message}`,
-  `{sender_id}` placeholders — works with most local SMS gateways). Provider not chosen yet.
+- `App\Services\Sms\SmsSender` is the only way a message leaves the system and owns the `sms_logs` row.
+- Two gateways, `TabaarakDriver` and `HormuudDriver` (`sms.driver` = `tabaarak` / `hormuud`); the
+  generic HTTP and log-only drivers were removed (2026-10-01) as they will never be used.
+  Each keeps its own account under `sms.<provider>` (username, encrypted password, sender ID,
+  optional API URL), so the admin switches provider in Settings → SMS without retyping.
+  "Test connection" logs in only (no SMS, no charge). Numbers are normalized to `252XXXXXXXXX`
+  (`App\Support\SomaliPhone`) because both gateways silently drop any other format; numbers that
+  cannot be rebuilt are recorded as failed, never guessed. Hormuud answers HTTP 200 on failure,
+  so success is `ResponseCode == 200` and the reason comes from `Data.Description`.
+  `sms_logs.provider` records which driver handled each row.
 - Events fire `SendTemplatedSms` queued job. Template placeholders:
   `{code} {sender_name} {sender_phone} {receiver_name} {receiver_phone} {amount_usd} {fee_usd}
   {branch} {date} {agent_name} {company_name}`.

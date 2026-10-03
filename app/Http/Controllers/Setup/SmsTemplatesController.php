@@ -9,7 +9,6 @@ use App\Models\SmsTemplate;
 use App\Services\Sms\SmsDeliveryException;
 use App\Services\Sms\SmsSender;
 use App\Services\Sms\SmsTemplateRenderer;
-use App\Support\Settings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -81,8 +80,8 @@ class SmsTemplatesController extends Controller
             return back()->withErrors(['test_phone' => __('Could not send: :error', ['error' => $e->getMessage()])]);
         }
 
-        return back()->with('status', __('Test sent via the :driver driver. Response: :response', [
-            'driver' => (string) Settings::get('sms.driver', 'log'),
+        return back()->with('status', __('Test sent via :driver. Response: :response', [
+            'driver' => $sender->provider()?->label(),
             'response' => $response,
         ]));
     }

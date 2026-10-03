@@ -35,7 +35,6 @@
         <x-card :title="__('Currency')">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <x-input name="currency_margin_bp" label="{{ __('FX margin (basis points)') }}" type="number" min="0" max="5000" :value="$settings['currency']['margin_bp']" hint="{{ __('500 = 5% margin on non-USD transfers.') }}" />
-                <x-input name="currency_max_round_up_bp" label="{{ __('Max round-up (basis points)') }}" type="number" min="0" max="5000" :value="$settings['currency']['max_round_up_bp']" hint="{{ __('Most an agent may add to the amount collected. 500 = 5%.') }}" />
                 <x-input name="currency_max_rate_age_hours" label="{{ __('Max rate age (hours)') }}" type="number" min="1" :value="$settings['currency']['max_rate_age_hours']" hint="{{ __('Older rates block non-USD transfers unless a manual rate is set.') }}" />
             </div>
         </x-card>
@@ -57,25 +56,107 @@
         </x-card>
 
         <x-card :title="__('SMS')" :subtitle="__('Nothing is sent until this is on and the individual template is active.')">
-            <div class="space-y-5">
+            <div
+                class="space-y-5"
+                x-data="{
+                    driver: @js((string) old('sms_driver', $settings['sms']['driver'])),
+                    testing: null,
+                    result: {},
+                    async test(provider) {
+                        this.testing = provider;
+                        this.result[provider] = null;
+                        const field = (name) => document.getElementById('sms_' + provider + '_' + name).value;
+                        try {
+                            const res = await fetch('{{ route('setup.settings.sms-test') }}', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                                body: JSON.stringify({ provider, username: field('username'), password: field('password'), api_url: field('api_url') }),
+                            });
+                            const data = await res.json();
+                            this.result[provider] = res.ok
+                                ? data
+                                : { ok: false, message: data.message || @js(__('The connection test failed.')) };
+                        } catch (e) {
+                            this.result[provider] = { ok: false, message: @js(__('Could not reach the server.')) };
+                        } finally {
+                            this.testing = null;
+                        }
+                    },
+                }"
+            >
                 <x-checkbox name="sms_enabled" label="{{ __('Send SMS messages') }}" :checked="$settings['sms']['enabled']" />
 
                 <div class="max-w-xs">
                     <x-select
                         name="sms_driver"
-                        label="{{ __('Driver') }}"
-                        :options="['log' => __('Log only (write to the log file)'), 'http' => __('HTTP gateway')]"
+                        label="{{ __('Provider in use') }}"
+                        :options="\App\Enums\SmsProvider::options()"
+                        placeholder="{{ __('Select provider') }}"
                         :value="$settings['sms']['driver']"
+                        x-model="driver"
+                        hint="{{ __('Each provider keeps its own account details, so you can switch back any time.') }}"
                     />
                 </div>
 
-                <x-textarea
-                    name="sms_http"
-                    label="{{ __('HTTP gateway configuration (JSON)') }}"
-                    :rows="8"
-                    :value="old('sms_http', json_encode($settings['sms']['http'] ?: new stdClass, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES))"
-                    hint="{{ __('Keys: url, method, send_as (form/json/query), sender_id, headers, params, success_contains. Use {to}, {message} and {sender_id} inside values.') }}"
-                />
+                @foreach (\App\Enums\SmsProvider::cases() as $gateway)
+                    @php($p = $gateway->value)
+                    @php($account = $settings['sms'][$p])
+                    <div x-show="driver === '{{ $p }}'" x-cloak class="space-y-4 rounded-lg border border-slate-200 p-4">
+                        <p class="text-xs text-slate-500">
+                            @if ($gateway->requiresSenderId())
+                                {{ __('Enter the account Hormuud issued to your company. The sender name is shown on every message (max 11 characters, and it must be approved on your Hormuud account).') }}
+                            @else
+                                {{ __('Enter the account Tabaarak issued to your company. Tabaarak takes the sender name from the account itself.') }}
+                            @endif
+                        </p>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                            <x-input
+                                name="sms_{{ $p }}_username"
+                                label="{{ __('API username') }}"
+                                :value="$account['username']"
+                                autocomplete="off"
+                            />
+                            <x-input
+                                name="sms_{{ $p }}_password"
+                                label="{{ __('API password') }}"
+                                type="password"
+                                autocomplete="new-password"
+                                :placeholder="$account['password_saved'] ? '••••••••' : ''"
+                                hint="{{ $account['password_saved'] ? __('Saved. Leave blank to keep it.') : __('Not set yet.') }}"
+                            />
+                            <x-input
+                                name="sms_{{ $p }}_sender_id"
+                                label="{{ $gateway->requiresSenderId() ? __('Sender name') : __('Sender name (optional)') }}"
+                                :value="$account['sender_id']"
+                                :maxlength="$gateway->requiresSenderId() ? \App\Services\Sms\HormuudDriver::MAX_SENDER_ID : 20"
+                            />
+                        </div>
+
+                        <x-input
+                            name="sms_{{ $p }}_api_url"
+                            label="{{ __('API URL') }}"
+                            type="url"
+                            :value="$account['api_url']"
+                            :placeholder="$gateway->defaultApiUrl()"
+                            hint="{{ __('Only change this if :provider gave you a different address. Leave blank for the standard one.', ['provider' => $gateway->label()]) }}"
+                        />
+
+                        <div class="flex flex-wrap items-center gap-3">
+                            <x-button variant="secondary" size="sm" x-on:click="test('{{ $p }}')" x-bind:disabled="testing !== null">
+                                <span x-text="testing === '{{ $p }}' ? @js(__('Testing…')) : @js(__('Test connection'))"></span>
+                            </x-button>
+                            <p class="text-xs text-slate-500" x-show="!result['{{ $p }}']">{{ __('Logs in only. No SMS is sent.') }}</p>
+                            <p
+                                class="text-sm"
+                                x-show="result['{{ $p }}']"
+                                x-cloak
+                                :class="result['{{ $p }}']?.ok ? 'text-green-700' : 'text-red-600'"
+                                x-text="result['{{ $p }}']?.message"
+                            ></p>
+                        </div>
+                    </div>
+                @endforeach
 
                 <div class="flex items-center gap-3">
                     <x-button :href="route('setup.sms-templates.index')" variant="secondary" size="sm">
