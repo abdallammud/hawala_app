@@ -36,7 +36,7 @@ it('sets up the branch, offices and two super admin agents', function () {
     $omar = User::where('email', 'omar@bluestar.so')->first();
     $yusuf = User::where('email', 'yusuf@bluestar.so')->first();
 
-    expect(Branch::pluck('name')->all())->toBe(['Mogadishu (Banadir)'])
+    expect(Branch::pluck('name')->all())->toBe(['Mogadishu (Banadir)', 'Brussels'])
         ->and(CompanyAccount::pluck('name')->sort()->values()->all())->toBe(['Brussels Office', 'Mogadishu Office'])
         ->and($omar->hasRole('super-admin'))->toBeTrue()
         ->and($yusuf->hasRole('super-admin'))->toBeTrue()
@@ -91,7 +91,7 @@ it('is safe to run twice', function () {
     $this->seed(CustomerDemoSeeder::class);
 
     expect(User::count())->toBe(2)
-        ->and(Branch::count())->toBe(1)
+        ->and(Branch::count())->toBe(2)
         ->and(CompanyAccount::count())->toBe(2)
         ->and(demoBalance(CompanyAccount::firstWhere('name', 'Mogadishu Office'), LedgerAccountType::Company))->toBe(2000000);
 });

@@ -11,13 +11,20 @@ class Branch extends Model
 {
     use LogsActivity;
 
-    protected $fillable = ['name', 'city', 'is_active'];
+    protected $fillable = ['name', 'city', 'is_payout_point', 'is_active'];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'is_payout_point' => 'boolean',
         ];
+    }
+
+    /** Branches a transfer can be sent to. */
+    public function scopePayoutPoints($query)
+    {
+        return $query->where('is_active', true)->where('is_payout_point', true);
     }
 
     public function users(): HasMany
@@ -32,6 +39,6 @@ class Branch extends Model
 
     public function getActivitylogOptions(): LogOptions
     {
-        return LogOptions::defaults()->logOnly(['name', 'city', 'is_active'])->logOnlyDirty()->dontSubmitEmptyLogs();
+        return LogOptions::defaults()->logOnly(['name', 'city', 'is_payout_point', 'is_active'])->logOnlyDirty()->dontSubmitEmptyLogs();
     }
 }

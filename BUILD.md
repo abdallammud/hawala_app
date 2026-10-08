@@ -801,3 +801,27 @@ Notes / still open:
 7. Cron (hPanel → Advanced → Cron Jobs), every minute:
    `cd /home/<user>/domains/<domain>/laravel && php artisan schedule:run >> /dev/null 2>&1`
 8. Force HTTPS (hPanel SSL). Test backup job runs and lands off-server.
+
+---
+
+## 18. v1.1 (customer feedback, Oct 2026)
+
+Decisions: Expenses is one top-level menu, tabbed (Expenses | Expense types), types are customer-editable.
+Tracking number = the automatic transfer code. 2FA = authenticator app (TOTP), set up at first login, no SMS.
+
+### v1.1 phase 1 — Quick wins
+- [x] 7 Tracking number shown on New Transfer (reserved against the form token; same number is saved)
+- [x] 10 Every user needs a home branch; transfers record `origin_branch_id`; branches have a
+      "pays out transfers" flag and only those are offered as a destination
+- [x] 11 Paid transfers cannot be cancelled (already enforced; regression tests added)
+- [x] 12 Dashboard cards link to their reports (hidden when the user can't open the report)
+- [ ] 3 Fee override on New Transfer — on hold, customer to clarify
+
+### v1.1 phase 2 — Same user as sending and payout agent (item 13)
+- [ ] Permission-driven roles instead of single `users.type`; `payout.allow_self_claim` (default off)
+- [ ] Maker ≠ checker on large-transfer approval and cancellation approval
+- [ ] Combined dashboard; commission split by source; tests for the same-user case
+
+### v1.1 phase 3 — Customers, own reports, PDF receipt, locations (items 4, 5, 8, 9; 6 needs XE decision)
+### v1.1 phase 4 — Expenses
+### v1.1 phase 5 — 2FA (authenticator app) and session timeout

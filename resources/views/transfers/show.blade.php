@@ -14,6 +14,7 @@
             <x-card>
                 <div class="flex items-start justify-between gap-4">
                     <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ __('Tracking number') }}</p>
                         <div class="flex items-center gap-2">
                             <h2 class="text-xl font-semibold text-slate-900">{{ $transfer->code }}</h2>
                             <x-badge :color="$transfer->status->color()">{{ $transfer->status->label() }}</x-badge>

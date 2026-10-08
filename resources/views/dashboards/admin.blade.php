@@ -44,31 +44,35 @@
         <x-stat
             label="{{ __('Money available in Somalia') }}"
             :value="\App\Support\Money::format($data['somalia_available'])"
-            icon="building-library" tone="brand"
+            icon="building-library" tone="brand" :href="\App\Support\ReportLink::to('company-accounts')"
             trend="{{ __(':accounts in accounts · :float agent float', ['accounts' => \App\Support\Money::format($data['somalia_company']), 'float' => \App\Support\Money::format($data['payout_float'])]) }}" />
-        <x-stat label="{{ __('Waiting to be paid') }}" :value="\App\Support\Money::format($data['waiting_to_pay'])" icon="inbox-stack" tone="gold" />
-        <x-stat label="{{ __('Uncollected') }}" :value="\App\Support\Money::format($data['uncollected_total'])" icon="exclamation-triangle" :tone="$data['uncollected_total'] > 0 ? 'amber' : 'slate'" />
-        <x-stat label="{{ __('Agents owing credit') }}" :value="$data['agents_negative_credit']" icon="banknotes" :tone="$data['agents_negative_credit'] > 0 ? 'red' : 'slate'" />
+        <x-stat label="{{ __('Waiting to be paid') }}" :value="\App\Support\Money::format($data['waiting_to_pay'])" icon="inbox-stack" tone="gold" :href="auth()->user()->can('queue.view') ? route('queue.index') : null" />
+        <x-stat label="{{ __('Uncollected') }}" :value="\App\Support\Money::format($data['uncollected_total'])" icon="exclamation-triangle" :tone="$data['uncollected_total'] > 0 ? 'amber' : 'slate'" :href="\App\Support\ReportLink::to('uncollected', allTime: true)" />
+        <x-stat label="{{ __('Agents owing credit') }}" :value="$data['agents_negative_credit']" icon="banknotes" :tone="$data['agents_negative_credit'] > 0 ? 'red' : 'slate'" :href="\App\Support\ReportLink::to('credit')" />
     </div>
 
     <x-card :title="__('Today')">
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="rounded-lg bg-brand-50 border border-brand-200 p-4">
+            @php $url = \App\Support\ReportLink::today('transfers'); @endphp
+            <{{ $url ? 'a' : 'div' }} @if ($url) href="{{ $url }}" @endif class="rounded-lg bg-brand-50 border border-brand-200 p-4 {{ $url ? 'transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500' : '' }}">
                 <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">{{ __('Transfers') }}</p>
                 <p class="text-xl sm:text-2xl font-bold text-brand-900 mt-1">{{ $data['today_count'] }}</p>
-            </div>
-            <div class="rounded-lg bg-brand-50 border border-brand-200 p-4">
+            </{{ $url ? 'a' : 'div' }}>
+            @php $url = \App\Support\ReportLink::today('transfers'); @endphp
+            <{{ $url ? 'a' : 'div' }} @if ($url) href="{{ $url }}" @endif class="rounded-lg bg-brand-50 border border-brand-200 p-4 {{ $url ? 'transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500' : '' }}">
                 <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">{{ __('Volume') }}</p>
                 <p class="text-xl sm:text-2xl font-bold text-brand-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_volume']) }}</p>
-            </div>
-            <div class="rounded-lg bg-gold-50 border border-gold-200 p-4">
+            </{{ $url ? 'a' : 'div' }}>
+            @php $url = \App\Support\ReportLink::today('transfers'); @endphp
+            <{{ $url ? 'a' : 'div' }} @if ($url) href="{{ $url }}" @endif class="rounded-lg bg-gold-50 border border-gold-200 p-4 {{ $url ? 'transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500' : '' }}">
                 <p class="text-xs font-semibold uppercase tracking-wide text-gold-700">{{ __('Fees') }}</p>
                 <p class="text-xl sm:text-2xl font-bold text-gold-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_fees']) }}</p>
-            </div>
-            <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-4">
+            </{{ $url ? 'a' : 'div' }}>
+            @php $url = \App\Support\ReportLink::today('profit'); @endphp
+            <{{ $url ? 'a' : 'div' }} @if ($url) href="{{ $url }}" @endif class="rounded-lg bg-emerald-50 border border-emerald-200 p-4 {{ $url ? 'transition hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500' : '' }}">
                 <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">{{ __('Profit after commission') }}</p>
                 <p class="text-xl sm:text-2xl font-bold text-emerald-900 mt-1 font-mono">{{ \App\Support\Money::format($data['today_profit']) }}</p>
-            </div>
+            </{{ $url ? 'a' : 'div' }}>
         </div>
 
         <div class="mt-5 pt-5 border-t border-slate-100 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-500">
@@ -94,7 +98,7 @@
         @else
             <x-table>
                 <x-slot:head>
-                    <th class="px-4 py-3">{{ __('Code') }}</th>
+                    <th class="px-4 py-3">{{ __('Tracking number') }}</th>
                     <th class="px-4 py-3">{{ __('Agent') }}</th>
                     <th class="px-4 py-3">{{ __('Branch') }}</th>
                     <th class="px-4 py-3 text-right">{{ __('Amount') }}</th>
@@ -103,7 +107,7 @@
 
                 @foreach ($data['recent'] as $transfer)
                     <tr>
-                        <td class="px-4 py-3" data-label="{{ __('Code') }}">
+                        <td class="px-4 py-3" data-label="{{ __('Tracking number') }}">
                             <a href="{{ route('transfers.show', $transfer) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $transfer->code }}</a>
                         </td>
                         <td class="px-4 py-3 text-slate-600" data-label="{{ __('Agent') }}">{{ $transfer->sendingAgent->name }}</td>

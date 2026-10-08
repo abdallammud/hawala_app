@@ -19,7 +19,7 @@ class StoreTransferRequest extends FormRequest
     {
         return [
             'idempotency_key' => ['required', 'uuid'],
-            'branch_id' => ['required', Rule::exists('branches', 'id')->where('is_active', true)],
+            'branch_id' => ['required', Rule::exists('branches', 'id')->where('is_active', true)->where('is_payout_point', true)],
             'sender_name' => ['required', 'string', 'max:255'],
             'sender_phone' => ['required', 'string', 'max:32'],
             'receiver_name' => ['required', 'string', 'max:255'],

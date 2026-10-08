@@ -17,6 +17,7 @@ use App\Services\CommissionCalculator;
 use App\Services\Ledger\LedgerService;
 use App\Services\Rates\QuoteService;
 use App\Support\Settings;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class TransferService
@@ -26,6 +27,25 @@ class TransferService
         private QuoteService $quotes,
         private CommissionCalculator $commissions,
     ) {}
+
+    /**
+     * The tracking number the New Transfer form shows before the transfer
+     * exists. Held against the form's idempotency token so the number on
+     * screen is the number the transfer gets, and a page reload keeps it.
+     */
+    public function reserveTrackingCode(string $idempotencyKey): string
+    {
+        return Cache::remember(
+            $this->trackingCacheKey($idempotencyKey),
+            now()->addDay(),
+            fn () => Transfer::generateCode(),
+        );
+    }
+
+    private function trackingCacheKey(string $idempotencyKey): string
+    {
+        return 'transfer.tracking.'.$idempotencyKey;
+    }
 
     /**
      * Create a transfer and post `transfer_sent`. The quote is recalculated
@@ -66,16 +86,23 @@ class TransferService
 
         $sendingShare = $this->commissions->sendingShare($agent, $quote['fee_cents']);
 
+        $code = Cache::pull($this->trackingCacheKey($idempotencyKey));
+
+        if (! $code || Transfer::query()->where('code', $code)->exists()) {
+            $code = Transfer::generateCode();
+        }
+
         $isLarge = $quote['amount_cents'] >= Transfer::largeThresholdCents();
         $holdLarge = (bool) Settings::get('fees.hold_large_transfers', false);
         $status = ($isLarge && $holdLarge) ? TransferStatus::AwaitingApproval : TransferStatus::Queued;
 
-        $transfer = DB::transaction(function () use ($agent, $branch, $data, $idempotencyKey, $quote, $sendingShare, $isLarge, $status, $marginBp) {
+        $transfer = DB::transaction(function () use ($agent, $branch, $code, $data, $idempotencyKey, $quote, $sendingShare, $isLarge, $status, $marginBp) {
             $transfer = Transfer::create([
-                'code' => Transfer::generateCode(),
+                'code' => $code,
                 'idempotency_key' => $idempotencyKey,
                 'sending_agent_id' => $agent->id,
                 'branch_id' => $branch->id,
+                'origin_branch_id' => $agent->branch_id,
                 'sender_name' => $data['sender_name'],
                 'sender_phone' => $data['sender_phone'],
                 'receiver_name' => $data['receiver_name'],

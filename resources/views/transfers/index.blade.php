@@ -28,7 +28,7 @@
         @else
             <x-table>
                 <x-slot:head>
-                    <th class="px-4 py-3">{{ __('Code') }}</th>
+                    <th class="px-4 py-3">{{ __('Tracking number') }}</th>
                     <th class="px-4 py-3">{{ __('Date') }}</th>
                     <th class="px-4 py-3">{{ __('Receiver') }}</th>
                     <th class="px-4 py-3">{{ __('Branch') }}</th>
@@ -39,7 +39,7 @@
 
                 @foreach ($transfers as $transfer)
                     <tr>
-                        <td class="px-4 py-3 font-medium text-slate-900" data-label="{{ __('Code') }}">
+                        <td class="px-4 py-3 font-medium text-slate-900" data-label="{{ __('Tracking number') }}">
                             <a href="{{ route('transfers.show', $transfer) }}" class="hover:text-brand-600">{{ $transfer->code }}</a>
                             @if ($transfer->is_large)
                                 <x-badge color="gold" class="ml-1">{{ __('Large') }}</x-badge>

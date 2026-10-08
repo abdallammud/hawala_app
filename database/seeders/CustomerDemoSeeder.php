@@ -44,6 +44,11 @@ class CustomerDemoSeeder extends ProductionSeeder
             ['city' => 'Mogadishu', 'is_active' => true],
         );
 
+        $brussels = Branch::query()->firstOrCreate(
+            ['name' => 'Brussels'],
+            ['city' => 'Brussels', 'is_payout_point' => false, 'is_active' => true],
+        );
+
         $brusselsOffice = CompanyAccount::query()->firstOrCreate(
             ['name' => 'Brussels Office'],
             ['location' => 'europe', 'is_active' => true],
@@ -54,7 +59,7 @@ class CustomerDemoSeeder extends ProductionSeeder
             ['location' => 'somalia', 'is_active' => true],
         );
 
-        $omar = $this->superAdmin('omar@bluestar.so', 'Omar Muse', UserType::SendingAgent, null, $password);
+        $omar = $this->superAdmin('omar@bluestar.so', 'Omar Muse', UserType::SendingAgent, $brussels, $password);
         $yusuf = $this->superAdmin('yusuf@bluestar.so', 'Yusuf Ali', UserType::PayoutAgent, $mogadishu, $password);
 
         $omar->update(['max_credit_cents' => 500000]); // $5,000

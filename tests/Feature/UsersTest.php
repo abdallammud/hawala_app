@@ -38,6 +38,7 @@ it('lets an admin create a sending agent', function () {
         'phone' => '+46701234567',
         'password' => 'password123',
         'type' => UserType::SendingAgent->value,
+        'branch_id' => Branch::create(['name' => 'London', 'city' => 'London', 'is_payout_point' => false])->id,
         'role' => 'sending-agent',
         'max_credit' => '500',
     ]);
@@ -51,7 +52,7 @@ it('lets an admin create a sending agent', function () {
         ->and($user->hasRole('sending-agent'))->toBeTrue();
 });
 
-it('requires a branch for payout agents', function () {
+it('requires a branch for every user type', function () {
     $admin = makeAdmin();
 
     $this->actingAs($admin)->post('/users', [

@@ -112,7 +112,7 @@ describe('DemoSeeder', function () {
     });
 
     it('creates the people and places from the spec', function () {
-        expect(Branch::count())->toBe(2)
+        expect(Branch::count())->toBe(4)
             ->and(CompanyAccount::count())->toBe(3)
             ->and(User::where('type', UserType::SendingAgent)->count())->toBe(2)
             ->and(User::where('type', UserType::PayoutAgent)->count())->toBe(3)
@@ -180,7 +180,7 @@ describe('DemoSeeder', function () {
         $this->seed(DemoSeeder::class);
 
         expect(Transfer::count())->toBe(40)
-            ->and(Branch::count())->toBe(2)
+            ->and(Branch::count())->toBe(4)
             ->and(CompanyAccount::count())->toBe(3)
             ->and(User::where('email', 'ali@bluestar.test')->count())->toBe(1)
             ->and((int) JournalLine::sum('amount_cents'))->toBe(0);

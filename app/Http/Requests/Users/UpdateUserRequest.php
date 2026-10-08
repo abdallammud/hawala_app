@@ -23,7 +23,7 @@ class UpdateUserRequest extends FormRequest
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
             'phone' => ['nullable', 'string', 'max:32', Rule::unique('users', 'phone')->ignore($userId)],
             'type' => ['required', Rule::enum(UserType::class)],
-            'branch_id' => ['nullable', 'required_if:type,'.UserType::PayoutAgent->value, 'exists:branches,id'],
+            'branch_id' => ['required', Rule::exists('branches', 'id')->where('is_active', true)],
             'role' => ['required', 'exists:roles,name'],
             'send_commission_type' => ['nullable', Rule::enum(CommissionType::class)],
             'send_commission_value' => ['nullable', 'integer', 'min:0'],

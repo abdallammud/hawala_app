@@ -56,9 +56,7 @@
                     <x-select name="role" label="{{ __('Role') }}" :options="$roles" :value="$user->roles->first()?->name" placeholder="{{ __('Select a role') }}" />
                 </div>
 
-                <div x-show="type === 'payout_agent'" x-cloak>
-                    <x-select name="branch_id" label="{{ __('Branch') }}" :options="$branches" :value="$user->branch_id" placeholder="{{ __('Select a branch') }}" />
-                </div>
+                <x-select name="branch_id" label="{{ __('Branch') }}" :options="$branches" :value="$user->branch_id" placeholder="{{ __('Select a branch') }}" />
 
                 <div class="border-t border-slate-100 pt-5">
                     <p class="text-sm font-medium text-slate-700 mb-1">{{ __('Commission overrides') }}</p>

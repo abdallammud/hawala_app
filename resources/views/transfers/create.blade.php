@@ -100,6 +100,14 @@
                 <input type="hidden" name="confirm_duplicate" value="1">
             @endif
 
+            <div class="rounded-xl border border-brand-200 bg-brand-50 px-5 py-4 flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">{{ __('Tracking number') }}</p>
+                    <p class="mt-1 font-mono text-2xl font-bold tracking-wider text-brand-900">{{ $trackingNumber }}</p>
+                </div>
+                <p class="hidden sm:block text-xs text-brand-700 text-right">{{ __('Give this number to the customer.') }}</p>
+            </div>
+
             <x-card :title="__('Customer')">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <x-input name="sender_name" label="{{ __('Sender name') }}" autofocus />

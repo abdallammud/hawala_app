@@ -64,6 +64,17 @@ class DemoSeeder extends Seeder
         $senders = $this->sendingAgents();
         $payers = $this->payoutAgents($branches);
 
+        // Everyone has a home branch. Senders work from European offices,
+        // which are not payout points.
+        $offices = [
+            Branch::query()->firstOrCreate(['name' => 'London'], ['city' => 'London', 'is_payout_point' => false, 'is_active' => true]),
+            Branch::query()->firstOrCreate(['name' => 'Stockholm'], ['city' => 'Stockholm', 'is_payout_point' => false, 'is_active' => true]),
+        ];
+        $admin->update(['branch_id' => $branches['Mogadishu']->id]);
+        foreach ($senders as $i => $sender) {
+            $sender->update(['branch_id' => $offices[$i % count($offices)]->id]);
+        }
+
         $this->fundEverybody($companyAccounts, $senders, $payers, $admin);
         $this->transfers($senders, $payers, $branches, $admin);
 

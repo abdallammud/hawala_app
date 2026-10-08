@@ -25,7 +25,7 @@ class TransferPolicy
 
         return $user->can('transfers.view_branch')
             && $user->branch_id !== null
-            && $transfer->branch_id === $user->branch_id;
+            && in_array($user->branch_id, [$transfer->branch_id, $transfer->origin_branch_id], true);
     }
 
     public function create(User $user): bool

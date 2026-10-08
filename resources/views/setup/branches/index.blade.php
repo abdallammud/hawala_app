@@ -17,12 +17,13 @@
         </x-slot:actions>
 
         @if ($branches->isEmpty())
-            <x-empty-state icon="building-office" title="{{ __('No branches yet') }}" description="{{ __('Create the first payout branch.') }}" />
+            <x-empty-state icon="building-office" title="{{ __('No branches yet') }}" description="{{ __('Create the first branch.') }}" />
         @else
             <x-table>
                 <x-slot:head>
                     <th class="px-4 py-3">{{ __('Name') }}</th>
                     <th class="px-4 py-3">{{ __('City') }}</th>
+                    <th class="px-4 py-3">{{ __('Type') }}</th>
                     <th class="px-4 py-3">{{ __('Users') }}</th>
                     <th class="px-4 py-3">{{ __('Status') }}</th>
                     <th class="px-4 py-3"></th>
@@ -32,6 +33,7 @@
                     <tr>
                         <td class="px-4 py-3 font-medium text-slate-900" data-label="{{ __('Name') }}">{{ $branch->name }}</td>
                         <td class="px-4 py-3 text-slate-500" data-label="{{ __('City') }}">{{ $branch->city }}</td>
+                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Type') }}">{{ $branch->is_payout_point ? __('Payout point') : __('Office') }}</td>
                         <td class="px-4 py-3 text-slate-500" data-label="{{ __('Users') }}">{{ $branch->users_count }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Status') }}">
                             <x-badge :color="$branch->is_active ? 'green' : 'slate'">

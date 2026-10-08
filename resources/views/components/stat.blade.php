@@ -1,4 +1,4 @@
-@props(['label', 'value', 'icon' => null, 'tone' => 'brand', 'trend' => null])
+@props(['label', 'value', 'icon' => null, 'tone' => 'brand', 'trend' => null, 'href' => null])
 
 @php
 // Each tone tints the whole card, not just the icon, so a dashboard reads at
@@ -16,7 +16,7 @@ $tones = [
 $t = $tones[$tone] ?? $tones['brand'];
 @endphp
 
-<div class="rounded-xl border shadow-sm p-5 flex items-start justify-between gap-4 {{ $t['card'] }}">
+<{{ $href ? 'a' : 'div' }} @if ($href) href="{{ $href }}" @endif class="rounded-xl border shadow-sm p-5 flex items-start justify-between gap-4 {{ $t['card'] }} {{ $href ? 'transition hover:shadow-md hover:-translate-y-px focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500' : '' }}">
     <div class="min-w-0">
         <p class="text-xs font-semibold uppercase tracking-wide truncate {{ $t['label'] }}">{{ $label }}</p>
         <p class="mt-2 text-2xl font-bold tracking-tight truncate {{ $t['value'] }}">{{ $value }}</p>
@@ -29,4 +29,4 @@ $t = $tones[$tone] ?? $tones['brand'];
             <x-icon :name="$icon" class="w-5 h-5" />
         </div>
     @endif
-</div>
+</{{ $href ? 'a' : 'div' }}>

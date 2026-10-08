@@ -28,7 +28,7 @@ class BranchesController extends Controller
 
     public function store(StoreBranchRequest $request): RedirectResponse
     {
-        Branch::create($request->validated());
+        Branch::create([...$request->validated(), 'is_payout_point' => $request->boolean('is_payout_point')]);
 
         return redirect()->route('setup.branches.index')->with('status', __('Branch created.'));
     }
@@ -42,7 +42,7 @@ class BranchesController extends Controller
 
     public function update(StoreBranchRequest $request, Branch $branch): RedirectResponse
     {
-        $branch->update($request->validated());
+        $branch->update([...$request->validated(), 'is_payout_point' => $request->boolean('is_payout_point')]);
 
         return redirect()->route('setup.branches.index')->with('status', __('Branch updated.'));
     }
@@ -52,7 +52,7 @@ class BranchesController extends Controller
         $this->authorize('setup.branches');
 
         if ($branch->is_active && $branch->hasActiveUsers()) {
-            return back()->withErrors(['branch' => __('This branch still has active payout agents assigned and cannot be deactivated.')]);
+            return back()->withErrors(['branch' => __('This branch still has active users assigned and cannot be deactivated.')]);
         }
 
         $branch->update(['is_active' => ! $branch->is_active]);

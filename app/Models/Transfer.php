@@ -14,7 +14,7 @@ use Illuminate\Support\Str;
 class Transfer extends Model
 {
     protected $fillable = [
-        'code', 'idempotency_key', 'sending_agent_id', 'branch_id',
+        'code', 'idempotency_key', 'sending_agent_id', 'branch_id', 'origin_branch_id',
         'sender_name', 'sender_phone', 'receiver_name', 'receiver_phone',
         'receiver_account_type_id', 'receiver_account_number',
         'original_currency', 'quote_mode', 'original_amount_cents', 'market_rate', 'margin_bp', 'customer_rate',
@@ -135,8 +135,11 @@ class Transfer extends Model
                 $q->orWhere('sending_agent_id', $user->id);
             }
 
+            // Branch scope covers both ends: transfers paid out here and
+            // transfers sent from here.
             if ($user->can('transfers.view_branch') && $user->branch_id) {
-                $q->orWhere('branch_id', $user->branch_id);
+                $q->orWhere('branch_id', $user->branch_id)
+                    ->orWhere('origin_branch_id', $user->branch_id);
             }
 
             // A user with neither scope sees nothing rather than everything.

@@ -68,7 +68,7 @@ class TransfersController extends Controller
     {
         $this->authorize('create', Transfer::class);
 
-        $branches = Branch::query()->where('is_active', true)->orderBy('name')->get();
+        $branches = Branch::query()->payoutPoints()->orderBy('name')->get();
 
         $currencies = Currency::query()->where('is_active', true)->orderBy('sort')->pluck('code', 'code');
 
@@ -79,13 +79,17 @@ class TransfersController extends Controller
             ->latest('id')
             ->value('original_currency');
 
+        // Keep the token (and so the tracking number) across a failed submit.
+        $idempotencyKey = $request->old('idempotency_key') ?: (string) Str::uuid();
+
         return view('transfers.create', [
             'branches' => $branches->pluck('name', 'id'),
             'onlyBranchId' => $branches->count() === 1 ? $branches->first()->id : null,
             'currencies' => $currencies,
             'payCurrency' => $currencies->has($lastCurrency) ? $lastCurrency : 'USD',
             'accountTypes' => AccountType::query()->where('is_active', true)->orderBy('sort')->pluck('name', 'id'),
-            'idempotencyKey' => (string) Str::uuid(),
+            'idempotencyKey' => $idempotencyKey,
+            'trackingNumber' => $this->transfers->reserveTrackingCode($idempotencyKey),
         ]);
     }
 

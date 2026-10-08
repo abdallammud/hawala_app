@@ -20,10 +20,10 @@
          chip uses. A viewer role would otherwise see four meaningless $0.00s. --}}
     @if (auth()->user()->sendBalanceCents() !== null)
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <x-stat label="{{ __('Send balance') }}" :value="\App\Support\Money::format($data['send_balance'])" icon="wallet" tone="brand" />
-            <x-stat label="{{ __('Credit owed') }}" :value="\App\Support\Money::format($data['credit_owed'])" icon="banknotes" :tone="$data['credit_owed'] > 0 ? 'red' : 'slate'" />
-            <x-stat label="{{ __('Commission') }}" :value="\App\Support\Money::format($data['commission'])" icon="gift" tone="gold" />
-            <x-stat label="{{ __('Uncollected') }}" :value="\App\Support\Money::format($data['uncollected'])" icon="exclamation-triangle" :tone="$data['uncollected'] > 0 ? 'amber' : 'slate'" />
+            <x-stat label="{{ __('Send balance') }}" :value="\App\Support\Money::format($data['send_balance'])" icon="wallet" tone="brand" :href="\App\Support\ReportLink::to('agent-statement', ['agent_id' => auth()->id(), 'account_type' => 'agent_send'])" />
+            <x-stat label="{{ __('Credit owed') }}" :value="\App\Support\Money::format($data['credit_owed'])" icon="banknotes" :tone="$data['credit_owed'] > 0 ? 'red' : 'slate'" :href="\App\Support\ReportLink::to('agent-statement', ['agent_id' => auth()->id(), 'account_type' => 'agent_credit'])" />
+            <x-stat label="{{ __('Commission') }}" :value="\App\Support\Money::format($data['commission'])" icon="gift" tone="gold" :href="\App\Support\ReportLink::to('commissions')" />
+            <x-stat label="{{ __('Uncollected') }}" :value="\App\Support\Money::format($data['uncollected'])" icon="exclamation-triangle" :tone="$data['uncollected'] > 0 ? 'amber' : 'slate'" :href="\App\Support\ReportLink::to('uncollected', ['agent_id' => auth()->id()], allTime: true)" />
         </div>
     @endif
 
@@ -37,7 +37,7 @@
         @else
             <x-table>
                 <x-slot:head>
-                    <th class="px-4 py-3">{{ __('Code') }}</th>
+                    <th class="px-4 py-3">{{ __('Tracking number') }}</th>
                     <th class="px-4 py-3">{{ __('Receiver') }}</th>
                     <th class="px-4 py-3">{{ __('Branch') }}</th>
                     <th class="px-4 py-3 text-right">{{ __('Amount') }}</th>
@@ -46,7 +46,7 @@
 
                 @foreach ($data['recent'] as $transfer)
                     <tr>
-                        <td class="px-4 py-3" data-label="{{ __('Code') }}">
+                        <td class="px-4 py-3" data-label="{{ __('Tracking number') }}">
                             <a href="{{ route('transfers.show', $transfer) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $transfer->code }}</a>
                         </td>
                         <td class="px-4 py-3 text-slate-600" data-label="{{ __('Receiver') }}">{{ $transfer->receiver_name }}</td>

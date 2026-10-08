@@ -6,6 +6,7 @@
 
                 <x-input name="name" label="{{ __('Name') }}" autofocus />
                 <x-input name="city" label="{{ __('City') }}" />
+                <x-checkbox name="is_payout_point" :checked="true" label="{{ __('Pays out transfers (offered as a destination)') }}" />
 
                 <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                     <x-button :href="route('setup.branches.index')" variant="ghost">{{ __('Back') }}</x-button>
