@@ -41,6 +41,8 @@ class PayoutQueueService
                 throw TransferStateException::notClaimable();
             }
 
+            $this->guardSelfClaim($fresh, $agent);
+
             if (! Settings::get('payout.allow_negative', false)) {
                 $payout = $this->ledger->accountFor($agent, LedgerAccountType::AgentPayout);
 
@@ -109,6 +111,10 @@ class PayoutQueueService
 
             $claimer = User::findOrFail($fresh->claimed_by);
 
+            // Re-checked here, not only at claim: the setting may have been
+            // switched off since, or an admin may have assigned it.
+            $this->guardSelfClaim($fresh, $claimer);
+
             if ($payoutAccount->user_id !== $claimer->id) {
                 throw new TransferStateException(__('That payout account does not belong to the paying agent.'));
             }
@@ -160,6 +166,8 @@ class PayoutQueueService
             if (! in_array($fresh->status, [TransferStatus::Queued, TransferStatus::Claimed], true)) {
                 throw TransferStateException::notClaimable();
             }
+
+            $this->guardSelfClaim($fresh, $payoutAgent);
 
             $fresh->update([
                 'status' => TransferStatus::Claimed,
@@ -234,6 +242,14 @@ class PayoutQueueService
         }
 
         return $expired;
+    }
+
+    /** Whoever sent a transfer may not also pay it, unless the company allows it. */
+    private function guardSelfClaim(Transfer $transfer, User $agent): void
+    {
+        if ($transfer->sending_agent_id === $agent->id && ! Settings::get('payout.allow_self_claim', false)) {
+            throw TransferStateException::selfClaim();
+        }
     }
 
     private function returnToQueue(Transfer $transfer): void

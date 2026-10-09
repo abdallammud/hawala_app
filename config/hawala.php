@@ -27,6 +27,10 @@ return [
         'claim_minutes' => 30,
         'allow_negative' => false,
         'reference_required' => false,
+        // A user who both sends and pays out may claim and pay their own
+        // transfer (and earn both commission shares). Off unless the company
+        // explicitly accepts that.
+        'allow_self_claim' => false,
     ],
 
     'credit' => [

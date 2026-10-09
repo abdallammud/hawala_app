@@ -818,9 +818,13 @@ Tracking number = the automatic transfer code. 2FA = authenticator app (TOTP), s
 - [ ] 3 Fee override on New Transfer — on hold, customer to clarify
 
 ### v1.1 phase 2 — Same user as sending and payout agent (item 13)
-- [ ] Permission-driven roles instead of single `users.type`; `payout.allow_self_claim` (default off)
-- [ ] Maker ≠ checker on large-transfer approval and cancellation approval
-- [ ] Combined dashboard; commission split by source; tests for the same-user case
+- [x] New user type "Sending & payout agent" (`dual_agent`) + role `sending-payout-agent`; type-driven
+      spots (balance requests, dashboard, queue, payout accounts, commission fields, reports) handle it
+- [x] `payout.allow_self_claim` (default off): enforced at claim, force-assign and mark-paid; button hidden
+- [x] Maker ≠ checker on large-transfer approval and cancellation approval (service-level)
+- [x] Combined dashboard; commissions report split into sending / payout; transfers report agent filter
+      matches sender, claimer or payer
+- [x] Tests for the same-user case (balances, company share, verify-ledger)
 
 ### v1.1 phase 3 — Customers, own reports, PDF receipt, locations (items 4, 5, 8, 9; 6 needs XE decision)
 ### v1.1 phase 4 — Expenses

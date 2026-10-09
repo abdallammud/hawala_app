@@ -72,7 +72,11 @@ class TransfersReport extends Report
             ->with(['sendingAgent', 'claimedBy', 'paidBy', 'branch'])
             ->whereBetween('created_at', [$filters->from, $filters->to])
             ->when($filters->branchId, fn ($q) => $q->where('branch_id', $filters->branchId))
-            ->when($filters->agentId, fn ($q) => $q->where('sending_agent_id', $filters->agentId))
+            // Anyone who touched the transfer: sent it, claimed it or paid it.
+            ->when($filters->agentId, fn ($q) => $q->where(fn ($q) => $q
+                ->where('sending_agent_id', $filters->agentId)
+                ->orWhere('claimed_by', $filters->agentId)
+                ->orWhere('paid_by', $filters->agentId)))
             ->when($filters->status, fn ($q) => $q->where('status', $filters->status))
             ->latest()
             ->get()

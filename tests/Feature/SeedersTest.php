@@ -29,7 +29,7 @@ describe('ProductionSeeder', function () {
 
         $this->seed(ProductionSeeder::class);
 
-        expect(Role::count())->toBe(4);
+        expect(Role::count())->toBe(5);
 
         // The six system accounts, one each, with no owner.
         $systemTypes = [
@@ -89,7 +89,7 @@ describe('ProductionSeeder', function () {
             ->and(Settings::get('payout.claim_minutes'))->toBe(45)
             ->and(User::where('email', 'owner@bluestar.test')->count())->toBe(1)
             ->and(FeeTier::count())->toBe(2)
-            ->and(Role::count())->toBe(4);
+            ->and(Role::count())->toBe(5);
 
         putenv('SUPER_ADMIN_EMAIL');
         putenv('SUPER_ADMIN_PASSWORD');

@@ -46,6 +46,7 @@
             <div class="mt-5 space-y-3">
                 <x-checkbox name="payout_allow_negative" label="{{ __('Allow payout balance to go negative') }}" :checked="$settings['payout']['allow_negative']" />
                 <x-checkbox name="payout_reference_required" label="{{ __('Require a payment reference when marking paid') }}" :checked="$settings['payout']['reference_required']" />
+                <x-checkbox name="payout_allow_self_claim" label="{{ __('Let an agent claim and pay a transfer they sent themselves') }}" :checked="$settings['payout']['allow_self_claim']" />
             </div>
         </x-card>
 

@@ -4,6 +4,7 @@ namespace App\Reports;
 
 use App\Enums\BalanceRequestKind;
 use App\Enums\BalanceRequestStatus;
+use App\Enums\JournalType;
 use App\Enums\LedgerAccountType;
 use App\Models\BalanceRequest;
 use App\Models\JournalLine;
@@ -38,6 +39,8 @@ class CommissionsReport extends Report
         return [
             'agent' => __('Agent'),
             'earned' => __('Earned'),
+            'earned_sending' => __('…from sending'),
+            'earned_payout' => __('…from paying out'),
             'moved' => __('Moved to send'),
             'withdrawn' => __('Withdrawn'),
             'balance' => __('Balance now'),
@@ -46,7 +49,7 @@ class CommissionsReport extends Report
 
     public function moneyColumns(): array
     {
-        return ['earned', 'moved', 'withdrawn', 'balance'];
+        return ['earned', 'earned_sending', 'earned_payout', 'moved', 'withdrawn', 'balance'];
     }
 
     public function rows(ReportFilters $filters, User $user): Collection
@@ -77,11 +80,25 @@ class CommissionsReport extends Report
                 ->whereBetween('created_at', [$filters->from, $filters->to])
                 ->sum('amount_cents'));
 
+            // The same credits, split by what earned them — matters when one
+            // person both sends and pays out.
+            $bySource = JournalLine::query()
+                ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+                ->where('journal_lines.ledger_account_id', $account->id)
+                ->where('journal_lines.amount_cents', '<', 0)
+                ->whereBetween('journal_lines.created_at', [$filters->from, $filters->to])
+                ->whereIn('journal_entries.type', [JournalType::TransferSent->value, JournalType::TransferPaid->value])
+                ->groupBy('journal_entries.type')
+                ->selectRaw('journal_entries.type as source, SUM(journal_lines.amount_cents) as total')
+                ->pluck('total', 'source');
+
             $mine = $movements->get($account->owner_id, collect());
 
             return [
                 'agent' => $account->owner?->name ?? __('Unknown'),
                 'earned' => $earned,
+                'earned_sending' => (int) abs($bySource[JournalType::TransferSent->value] ?? 0),
+                'earned_payout' => (int) abs($bySource[JournalType::TransferPaid->value] ?? 0),
                 'moved' => (int) $mine->where('kind', BalanceRequestKind::CommissionMove)->sum('amount_cents'),
                 'withdrawn' => (int) $mine->where('kind', BalanceRequestKind::CommissionWithdraw)->sum('amount_cents'),
                 'balance' => $account->balance_cents,

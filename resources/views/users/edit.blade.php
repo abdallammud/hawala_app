@@ -67,14 +67,14 @@
                             <x-select name="send_commission_type" label="{{ __('Send commission type') }}" :options="\App\Enums\CommissionType::options()" :value="$user->send_commission_type?->value" placeholder="{{ __('Use default') }}" />
                             <x-input name="send_commission_value" label="{{ __('Send commission value') }}" type="number" min="0" :value="$user->send_commission_value" hint="{{ __('Basis points if percent (500 = 5%), cents if flat.') }}" />
                         </div>
-                        <div x-show="type === 'payout_agent'" x-cloak class="space-y-5">
+                        <div x-show="['payout_agent', 'dual_agent'].includes(type)" x-cloak class="space-y-5">
                             <x-select name="payout_commission_type" label="{{ __('Payout commission type') }}" :options="\App\Enums\CommissionType::options()" :value="$user->payout_commission_type?->value" placeholder="{{ __('Use default') }}" />
                             <x-input name="payout_commission_value" label="{{ __('Payout commission value') }}" type="number" min="0" :value="$user->payout_commission_value" hint="{{ __('Basis points if percent, cents if flat.') }}" />
                         </div>
                     </div>
                 </div>
 
-                <div x-show="type === 'sending_agent'" x-cloak class="border-t border-slate-100 pt-5">
+                <div x-show="['sending_agent', 'dual_agent'].includes(type)" x-cloak class="border-t border-slate-100 pt-5">
                     <x-input name="max_credit" label="{{ __('Max credit ($)') }}" type="number" min="0" step="0.01" :value="$user->max_credit_cents ? $user->max_credit_cents / 100 : null" hint="{{ __('Leave blank for the company default / no limit.') }}" prefix="$" />
                 </div>
 
@@ -85,7 +85,7 @@
             </form>
         </x-card>
 
-        @if ($user->type === \App\Enums\UserType::PayoutAgent)
+        @if ($user->type->pays())
             <x-card :title="__('Payout accounts')" :subtitle="__('Accounts this agent can pay receivers from.')">
                 <div class="space-y-3 mb-5">
                     @forelse ($user->payoutAccounts as $account)

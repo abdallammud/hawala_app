@@ -53,11 +53,11 @@ class PayoutQueueController extends Controller
             'queued' => $queued,
             'claimed' => $mine,
             'payoutAccounts' => $user->payoutAccounts()->where('is_active', true)->with('accountType')->get(),
-            'payoutBalance' => $user->type === UserType::PayoutAgent
+            'payoutBalance' => $user->type->pays()
                 ? $this->ledger->accountFor($user, LedgerAccountType::AgentPayout)->balance_cents
                 : null,
             'branchAgents' => $isAdmin
-                ? User::query()->where('type', UserType::PayoutAgent)->where('is_active', true)->orderBy('name')->get()
+                ? User::query()->whereIn('type', [UserType::PayoutAgent, UserType::DualAgent])->where('is_active', true)->orderBy('name')->get()
                 : collect(),
             'isAdmin' => $isAdmin,
         ]);
@@ -119,7 +119,7 @@ class PayoutQueueController extends Controller
         $validated = $request->validate(['user_id' => ['required', 'exists:users,id']]);
         $agent = User::findOrFail($validated['user_id']);
 
-        if ($agent->type !== UserType::PayoutAgent || $agent->branch_id !== $transfer->branch_id) {
+        if (! $agent->type->pays() || ! $agent->is_active || $agent->branch_id !== $transfer->branch_id) {
             return back()->withErrors(['status' => __('Pick an active payout agent in this transfer\'s branch.')]);
         }
 

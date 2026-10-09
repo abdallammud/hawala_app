@@ -63,6 +63,7 @@ class SettingsController extends Controller
             'payout_claim_minutes' => ['required', 'integer', 'min:1'],
             'payout_allow_negative' => ['boolean'],
             'payout_reference_required' => ['boolean'],
+            'payout_allow_self_claim' => ['boolean'],
 
             'credit_default_max' => ['nullable', 'numeric', 'min:0'],
 
@@ -107,6 +108,7 @@ class SettingsController extends Controller
         Settings::set('payout.claim_minutes', (int) $validated['payout_claim_minutes'], $updatedBy);
         Settings::set('payout.allow_negative', $request->boolean('payout_allow_negative'), $updatedBy);
         Settings::set('payout.reference_required', $request->boolean('payout_reference_required'), $updatedBy);
+        Settings::set('payout.allow_self_claim', $request->boolean('payout_allow_self_claim'), $updatedBy);
 
         Settings::set('credit.default_max_cents', $request->filled('credit_default_max') ? Money::parseCents((string) $validated['credit_default_max']) : null, $updatedBy);
 

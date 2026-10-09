@@ -23,6 +23,10 @@ class DashboardController extends Controller
 
         return match ($user->type) {
             UserType::PayoutAgent => view('dashboards.payout-agent', ['data' => $this->dashboard->forPayoutAgent($user)]),
+            UserType::DualAgent => view('dashboards.dual-agent', [
+                'sending' => $this->dashboard->forSendingAgent($user),
+                'payout' => $this->dashboard->forPayoutAgent($user),
+            ]),
             UserType::SendingAgent => view('dashboards.sending-agent', ['data' => $this->dashboard->forSendingAgent($user)]),
             UserType::Staff => view('dashboards.sending-agent', ['data' => $this->dashboard->forSendingAgent($user)]),
         };

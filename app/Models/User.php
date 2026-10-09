@@ -114,7 +114,7 @@ class User extends Authenticatable
             return $this->sendBalanceMemo = (int) $cents;
         }
 
-        $sends = $this->type === UserType::SendingAgent || $this->can('transfers.create');
+        $sends = $this->type->sends() || $this->can('transfers.create');
 
         return $this->sendBalanceMemo = $sends ? 0 : null;
     }

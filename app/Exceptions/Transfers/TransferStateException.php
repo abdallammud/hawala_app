@@ -30,6 +30,16 @@ class TransferStateException extends RuntimeException
         return new self(__('This transfer is claimed by someone else.'));
     }
 
+    public static function selfClaim(): self
+    {
+        return new self(__('You cannot claim or pay a transfer you sent yourself.'));
+    }
+
+    public static function selfApproval(): self
+    {
+        return new self(__('You cannot approve your own request.'));
+    }
+
     public static function alreadyDecided(): self
     {
         return new self(__('This request has already been decided.'));

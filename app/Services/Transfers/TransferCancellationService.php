@@ -112,6 +112,11 @@ class TransferCancellationService
     {
         $this->guardPending($request);
 
+        // Maker ≠ checker, whoever else the approver also is.
+        if ($request->requested_by === $admin->id) {
+            throw TransferStateException::selfApproval();
+        }
+
         DB::transaction(function () use ($request, $admin) {
             $this->cancel($request->transfer, $admin, $request->reason);
 
@@ -143,6 +148,10 @@ class TransferCancellationService
     {
         if ($transfer->status !== TransferStatus::AwaitingApproval) {
             throw new TransferStateException(__('This transfer is not awaiting approval.'));
+        }
+
+        if ($transfer->sending_agent_id === $admin->id) {
+            throw TransferStateException::selfApproval();
         }
 
         $transfer->update(['status' => TransferStatus::Queued]);

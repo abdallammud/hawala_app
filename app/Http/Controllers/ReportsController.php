@@ -95,7 +95,7 @@ class ReportsController extends Controller
         return [
             'branches' => Branch::query()->orderBy('name')->pluck('name', 'id'),
             'agents' => User::query()
-                ->whereIn('type', [UserType::SendingAgent, UserType::PayoutAgent, UserType::Staff])
+                ->whereIn('type', [UserType::SendingAgent, UserType::PayoutAgent, UserType::DualAgent, UserType::Staff])
                 ->orderBy('name')
                 ->pluck('name', 'id'),
             'statuses' => TransfersReport::statusOptions(),

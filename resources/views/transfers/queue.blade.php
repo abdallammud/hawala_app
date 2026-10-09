@@ -142,6 +142,9 @@
                                     <x-button type="submit" size="sm" class="w-full sm:w-auto">{{ __('Claim') }}</x-button>
                                 </form>
                             @endcan
+                            @if ($transfer->sending_agent_id === auth()->id() && auth()->user()->can('queue.claim') && ! \App\Support\Settings::get('payout.allow_self_claim', false))
+                                <span class="text-xs text-slate-500">{{ __('You sent this — someone else must pay it.') }}</span>
+                            @endif
 
                             @can('forceAssign', \App\Models\Transfer::class)
                                 <x-button type="button" variant="secondary" size="sm"
@@ -150,7 +153,7 @@
                                 </x-button>
 
                                 <x-modal name="assign-{{ $transfer->id }}" title="{{ __('Assign :code', ['code' => $transfer->code]) }}">
-                                    @php $eligible = $branchAgents->where('branch_id', $transfer->branch_id); @endphp
+                                    @php $eligible = $branchAgents->where('branch_id', $transfer->branch_id)->reject(fn ($a) => $a->id === $transfer->sending_agent_id && ! \App\Support\Settings::get('payout.allow_self_claim', false)); @endphp
                                     <form method="POST" action="{{ route('queue.force-assign', $transfer) }}" class="space-y-4">
                                         @csrf
                                         @if ($eligible->isEmpty())

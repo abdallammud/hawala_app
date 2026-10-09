@@ -87,5 +87,9 @@ class RolesAndPermissionsSeeder extends Seeder
 
         Role::findOrCreate('payout-agent', 'web')
             ->syncPermissions(self::PAYOUT_AGENT);
+
+        // One person who both sends and pays out: everything either role has.
+        Role::findOrCreate('sending-payout-agent', 'web')
+            ->syncPermissions(array_values(array_unique([...self::SENDING_AGENT, ...self::PAYOUT_AGENT])));
     }
 }

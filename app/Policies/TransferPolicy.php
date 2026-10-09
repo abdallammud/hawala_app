@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Enums\TransferStatus;
 use App\Models\Transfer;
 use App\Models\User;
+use App\Support\Settings;
 
 class TransferPolicy
 {
@@ -70,6 +71,7 @@ class TransferPolicy
     public function claim(User $user, Transfer $transfer): bool
     {
         return $user->can('queue.claim')
+            && ($transfer->sending_agent_id !== $user->id || Settings::get('payout.allow_self_claim', false))
             && $transfer->status === TransferStatus::Queued
             && $user->branch_id !== null
             && $transfer->branch_id === $user->branch_id;

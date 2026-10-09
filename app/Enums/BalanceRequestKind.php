@@ -63,6 +63,7 @@ enum BalanceRequestKind: string
         $kinds = match ($user->type) {
             UserType::SendingAgent => [self::TopupPaid, self::TopupCredit],
             UserType::PayoutAgent => [self::PayoutFunding, self::PayoutReturn],
+            UserType::DualAgent => [self::TopupPaid, self::TopupCredit, self::PayoutFunding, self::PayoutReturn],
             UserType::Staff => [self::TopupPaid, self::TopupCredit, self::CreditRepayment, self::PayoutFunding, self::PayoutReturn],
         };
 

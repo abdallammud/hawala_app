@@ -1,6 +1,7 @@
 @php
     $canApproveLarge = $transfer->status === \App\Enums\TransferStatus::AwaitingApproval
-        && auth()->user()->can('approveLarge', \App\Models\Transfer::class);
+        && auth()->user()->can('approveLarge', \App\Models\Transfer::class)
+        && auth()->id() !== $transfer->sending_agent_id;
     $canCancel = auth()->user()->can('cancel', $transfer);
     $canRequestCancel = auth()->user()->can('requestCancel', $transfer);
     $pendingCancellation = $transfer->cancellationRequests
