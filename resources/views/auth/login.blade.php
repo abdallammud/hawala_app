@@ -8,6 +8,12 @@
         </div>
     @endif
 
+    @if (request()->boolean('idle'))
+        <div class="mt-5">
+            <x-alert type="info">{{ __('You were signed out because you were inactive for a while. Please log in again.') }}</x-alert>
+        </div>
+    @endif
+
     @error('login')
         <div class="mt-5">
             <x-alert type="error">{{ $message }}</x-alert>

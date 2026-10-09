@@ -26,6 +26,18 @@ class UserPolicy
         return $user->can('users.edit');
     }
 
+    /** Someone else's 2FA, e.g. after they lost their phone. Your own is managed on your profile. */
+    public function resetTwoFactor(User $user, User $target): bool
+    {
+        // Only a super admin may touch a super admin's, so an ordinary admin
+        // cannot weaken the strongest account in the system.
+        if ($target->hasRole('super-admin') && ! $user->hasRole('super-admin')) {
+            return false;
+        }
+
+        return $user->can('users.reset_two_factor') && $user->isNot($target);
+    }
+
     public function deactivate(User $user, User $target): bool
     {
         return $user->can('users.deactivate') && $user->isNot($target);

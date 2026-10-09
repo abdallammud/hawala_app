@@ -843,3 +843,11 @@ Tracking number = the automatic transfer code. 2FA = authenticator app (TOTP), s
 - [x] Permissions `expenses.view_own|view_branch|view_all|create|edit|void|types`; reports Expenses and
       Expenses by type (`reports.expenses`); Profit report has an Expenses column
 ### v1.1 phase 5 — 2FA (authenticator app) and session timeout
+- [x] 1 Two-factor with an authenticator app (TOTP; `pragmarx/google2fa` + `bacon/bacon-qr-code`, no SMS).
+      Forced setup at first login (QR + typed key, confirm a code, 8 one-time recovery codes);
+      a code is asked for on every login; used codes are refused; throttled; secret encrypted at rest
+- [x] Setting `security.two_factor_required` (default on). Admins reset a user's 2FA (`users.reset_two_factor`,
+      super admin only for super admins); `php artisan hawala:reset-two-factor email` as the way back in
+- [x] 2 Idle logout (`security.idle_timeout_minutes`, default 15, 0 = off, never above the session lifetime):
+      server-side check plus a page timer with a 60-second "Stay signed in" warning; typing counts as activity
+- Do not change `APP_KEY` on a live system — it encrypts the 2FA secrets (see DEPLOY.md)

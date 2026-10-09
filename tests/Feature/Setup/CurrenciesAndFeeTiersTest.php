@@ -134,6 +134,7 @@ it('lets an admin save settings', function () {
         'credit_default_max' => '2000',
         'sms_driver' => 'hormuud',
         'general_company_name' => 'Blue Star',
+        'security_idle_timeout_minutes' => 15,
         'general_timezone' => 'Africa/Mogadishu',
         'general_duplicate_warning_minutes' => '15',
     ])->assertRedirect();
@@ -166,6 +167,7 @@ it('rejects an unknown SMS provider', function () {
         'payout_claim_minutes' => '30',
         'sms_driver' => 'http',
         'general_company_name' => 'Blue Star',
+        'security_idle_timeout_minutes' => 15,
         'general_timezone' => 'Africa/Mogadishu',
         'general_duplicate_warning_minutes' => '10',
     ])->assertSessionHasErrors('sms_driver');

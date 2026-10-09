@@ -38,6 +38,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     protected function casts(): array
@@ -46,12 +48,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
             'is_active' => 'boolean',
             'type' => UserType::class,
             'send_commission_type' => CommissionType::class,
             'payout_commission_type' => CommissionType::class,
             'max_credit_cents' => 'integer',
         ];
+    }
+
+    /** True once the user has proved their authenticator app works. */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return $this->two_factor_confirmed_at !== null;
     }
 
     public function branch(): BelongsTo

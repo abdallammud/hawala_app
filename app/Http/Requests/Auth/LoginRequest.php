@@ -25,13 +25,20 @@ class LoginRequest extends FormRequest
         ];
     }
 
-    public function authenticate(): void
+    /**
+     * Check the password and return the user — without signing them in. The
+     * controller signs them in, or sends them to the 2FA challenge first.
+     */
+    public function authenticate(): User
     {
         $this->ensureIsNotRateLimited();
 
         $field = str_contains($this->string('login'), '@') ? 'email' : 'phone';
+        $provider = Auth::guard('web')->getProvider();
 
-        if (! Auth::attempt([$field => $this->string('login'), 'password' => $this->string('password')], $this->boolean('remember'))) {
+        $user = $provider->retrieveByCredentials([$field => $this->string('login')->toString()]);
+
+        if (! $user || ! $provider->validateCredentials($user, ['password' => $this->string('password')->toString()])) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -40,19 +47,15 @@ class LoginRequest extends FormRequest
         }
 
         /** @var User $user */
-        $user = Auth::user();
-
         if (! $user->is_active) {
-            Auth::logout();
-
             throw ValidationException::withMessages([
                 'login' => __('This account has been deactivated. Contact an administrator.'),
             ]);
         }
 
-        $user->forceFill(['last_login_at' => now()])->save();
-
         RateLimiter::clear($this->throttleKey());
+
+        return $user;
     }
 
     public function ensureIsNotRateLimited(): void

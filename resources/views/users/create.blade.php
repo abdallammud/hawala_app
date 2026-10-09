@@ -27,12 +27,10 @@
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div x-show="type !== 'payout_agent'" x-cloak class="space-y-5">
-                            <x-select name="send_commission_type" label="{{ __('Send commission type') }}" :options="\App\Enums\CommissionType::options()" placeholder="{{ __('Use default') }}" />
-                            <x-input name="send_commission_value" label="{{ __('Send commission value') }}" type="number" min="0" hint="{{ __('Basis points if percent (500 = 5%), cents if flat.') }}" />
+                            <x-commission-fields type-name="send_commission_type" value-name="send_commission_value" :type-label="__('Send commission type')" :value-label="__('Send commission value')" />
                         </div>
                         <div x-show="['payout_agent', 'dual_agent'].includes(type)" x-cloak class="space-y-5">
-                            <x-select name="payout_commission_type" label="{{ __('Payout commission type') }}" :options="\App\Enums\CommissionType::options()" placeholder="{{ __('Use default') }}" />
-                            <x-input name="payout_commission_value" label="{{ __('Payout commission value') }}" type="number" min="0" hint="{{ __('Basis points if percent, cents if flat.') }}" />
+                            <x-commission-fields type-name="payout_commission_type" value-name="payout_commission_value" :type-label="__('Payout commission type')" :value-label="__('Payout commission value')" :percent-hint="__('Percent of the fee left after the sending agent\'s share. Type 20 for 20%.')" />
                         </div>
                     </div>
                 </div>

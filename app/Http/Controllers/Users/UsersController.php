@@ -11,10 +11,13 @@ use App\Models\AccountType;
 use App\Models\Branch;
 use App\Models\LedgerAccount;
 use App\Models\User;
+use App\Services\Auth\TwoFactorService;
 use App\Support\LedgerStatement;
+use App\Support\CommissionInput;
 use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Spatie\Permission\Models\Role;
 
@@ -69,9 +72,9 @@ class UsersController extends Controller
             'type' => $validated['type'],
             'branch_id' => $validated['branch_id'] ?? null,
             'send_commission_type' => $validated['send_commission_type'] ?? null,
-            'send_commission_value' => $validated['send_commission_value'] ?? null,
+            'send_commission_value' => CommissionInput::toStored($validated['send_commission_type'] ?? null, $validated['send_commission_value'] ?? null),
             'payout_commission_type' => $validated['payout_commission_type'] ?? null,
-            'payout_commission_value' => $validated['payout_commission_value'] ?? null,
+            'payout_commission_value' => CommissionInput::toStored($validated['payout_commission_type'] ?? null, $validated['payout_commission_value'] ?? null),
             'max_credit_cents' => isset($validated['max_credit']) ? Money::parseCents((string) $validated['max_credit']) : null,
         ]);
 
@@ -104,9 +107,9 @@ class UsersController extends Controller
             'type' => $validated['type'],
             'branch_id' => $validated['branch_id'] ?? null,
             'send_commission_type' => $validated['send_commission_type'] ?? null,
-            'send_commission_value' => $validated['send_commission_value'] ?? null,
+            'send_commission_value' => CommissionInput::toStored($validated['send_commission_type'] ?? null, $validated['send_commission_value'] ?? null),
             'payout_commission_type' => $validated['payout_commission_type'] ?? null,
-            'payout_commission_value' => $validated['payout_commission_value'] ?? null,
+            'payout_commission_value' => CommissionInput::toStored($validated['payout_commission_type'] ?? null, $validated['payout_commission_value'] ?? null),
             'max_credit_cents' => isset($validated['max_credit']) ? Money::parseCents((string) $validated['max_credit']) : null,
         ])->save();
 
@@ -159,6 +162,23 @@ class UsersController extends Controller
         $user->update(['is_active' => false]);
 
         return back()->with('status', __(':name was deactivated.', ['name' => $user->name]));
+    }
+
+    /** Clear a user's authenticator: they set up a new one at their next login. */
+    public function resetTwoFactor(User $user, TwoFactorService $twoFactor): RedirectResponse
+    {
+        $this->authorize('resetTwoFactor', $user);
+
+        $twoFactor->reset($user);
+
+        // Anyone signed in as them is signed out, so the old phone stops being enough.
+        if (config('session.driver') === 'database') {
+            DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
+        }
+
+        activity()->causedBy(auth()->user())->performedOn($user)->log('Two-factor authentication reset by an administrator');
+
+        return back()->with('status', __(':name will set up two-factor again at their next login.', ['name' => $user->name]));
     }
 
     public function activate(User $user): RedirectResponse

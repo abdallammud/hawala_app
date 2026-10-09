@@ -6,6 +6,8 @@ use App\Enums\SmsProvider;
 use App\Http\Controllers\Controller;
 use App\Services\Sms\GatewayCredentials;
 use App\Services\Sms\HormuudDriver;
+use App\Rules\CommissionValue;
+use App\Support\CommissionInput;
 use App\Support\Money;
 use App\Support\Settings;
 use Illuminate\Http\RedirectResponse;
@@ -52,9 +54,9 @@ class SettingsController extends Controller
             'fees_hold_large_transfers' => ['boolean'],
 
             'commission_send_type' => ['required', 'in:percent,flat,none'],
-            'commission_send_value' => ['required', 'integer', 'min:0'],
+            'commission_send_value' => ['nullable', 'required_unless:commission_send_type,none', new CommissionValue('commission_send_type')],
             'commission_payout_type' => ['required', 'in:percent,flat,none'],
-            'commission_payout_value' => ['required', 'integer', 'min:0'],
+            'commission_payout_value' => ['nullable', 'required_unless:commission_payout_type,none', new CommissionValue('commission_payout_type')],
             'commission_move_requires_approval' => ['boolean'],
 
             'currency_margin_bp' => ['required', 'integer', 'min:0', 'max:5000'],
@@ -80,6 +82,10 @@ class SettingsController extends Controller
 
             'receipts_enabled' => ['boolean'],
 
+            'security_two_factor_required' => ['boolean'],
+            // Never longer than the session itself, or the timeout could not fire.
+            'security_idle_timeout_minutes' => ['required', 'integer', 'min:0', 'max:'.(int) config('session.lifetime')],
+
             'general_company_name' => ['required', 'string', 'max:255'],
             'general_timezone' => ['required', 'string', 'max:64'],
             'general_duplicate_warning_minutes' => ['required', 'integer', 'min:0'],
@@ -97,9 +103,9 @@ class SettingsController extends Controller
         Settings::set('fees.hold_large_transfers', $request->boolean('fees_hold_large_transfers'), $updatedBy);
 
         Settings::set('commission.send_type', $validated['commission_send_type'], $updatedBy);
-        Settings::set('commission.send_value', (int) $validated['commission_send_value'], $updatedBy);
+        Settings::set('commission.send_value', CommissionInput::toStored($validated['commission_send_type'], $validated['commission_send_value'] ?? null) ?? 0, $updatedBy);
         Settings::set('commission.payout_type', $validated['commission_payout_type'], $updatedBy);
-        Settings::set('commission.payout_value', (int) $validated['commission_payout_value'], $updatedBy);
+        Settings::set('commission.payout_value', CommissionInput::toStored($validated['commission_payout_type'], $validated['commission_payout_value'] ?? null) ?? 0, $updatedBy);
         Settings::set('commission.move_requires_approval', $request->boolean('commission_move_requires_approval'), $updatedBy);
 
         Settings::set('currency.margin_bp', (int) $validated['currency_margin_bp'], $updatedBy);
@@ -120,6 +126,9 @@ class SettingsController extends Controller
         }
 
         Settings::set('receipts.enabled', $request->boolean('receipts_enabled'), $updatedBy);
+
+        Settings::set('security.two_factor_required', $request->boolean('security_two_factor_required'), $updatedBy);
+        Settings::set('security.idle_timeout_minutes', (int) $validated['security_idle_timeout_minutes'], $updatedBy);
 
         Settings::set('general.company_name', $validated['general_company_name'], $updatedBy);
         Settings::set('general.timezone', $validated['general_timezone'], $updatedBy);

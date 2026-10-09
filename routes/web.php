@@ -57,6 +57,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{user}/activate', [UsersController::class, 'activate'])->name('users.activate');
     });
 
+    Route::post('/users/{user}/two-factor/reset', [UsersController::class, 'resetTwoFactor'])
+        ->middleware('can:users.reset_two_factor')->name('users.two-factor.reset');
+
     Route::middleware('can:setup.roles')->group(function () {
         Route::get('/users/roles', [RolesController::class, 'index'])->name('roles.index');
         Route::get('/users/roles/create', [RolesController::class, 'create'])->name('roles.create');

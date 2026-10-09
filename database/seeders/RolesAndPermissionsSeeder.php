@@ -31,7 +31,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'company_accounts.view', 'company_accounts.manage', 'company_accounts.transfer',
 
         'users.view', 'users.create', 'users.edit', 'users.deactivate', 'users.set_commission',
-        'users.manage_payout_accounts', 'users.set_credit_limit',
+        'users.manage_payout_accounts', 'users.set_credit_limit', 'users.reset_two_factor',
 
         'setup.branches', 'setup.account_types', 'setup.currencies', 'setup.fees', 'setup.settings',
         'setup.sms', 'setup.roles',

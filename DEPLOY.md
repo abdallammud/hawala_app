@@ -302,6 +302,11 @@ Work through these in the app as the super admin:
       payout agent their payout accounts
 - [ ] `Setup → SMS Templates` — write the messages, send a test, then turn
       SMS on in Settings once the gateway is confirmed
+- [ ] Log in as the super admin and **set up two-factor** (authenticator app) —
+      you are asked to straight away. Save the recovery codes somewhere safe.
+      Every other user does the same at their first login
+- [ ] `Setup → Settings → Security` — check the idle logout time (15 minutes
+      by default)
 - [ ] Run one small real transfer end to end: send → claim → pay
 - [ ] `php artisan hawala:verify-ledger` — must report no problems
 - [ ] Check the cron has run (`storage/logs/laravel.log`, or that rates
@@ -353,7 +358,7 @@ into `public_html/` and re-apply the two `index.php` path edits.
 **500 with a blank page.** `storage/logs/laravel.log` has the reason. Usually
 permissions: `chmod -R 775 storage bootstrap/cache`.
 
-**"No application encryption key."** `php artisan key:generate --force`, then
+**"No application encryption key."** On a *fresh* install: `php artisan key:generate --force`, then
 `php artisan config:cache`.
 
 **Styles missing, page unstyled.** `public/build` did not upload, or
@@ -366,6 +371,16 @@ is wrong. Test it by hand: `cd <path> && php artisan schedule:run`.
 down or the provider is unreachable. `php artisan hawala:fetch-rates` shows
 the error. A manual rate can be set per currency in `Setup → Currencies` as a
 stopgap.
+
+**Someone is locked out by two-factor** (lost phone, no recovery codes). Any
+user with the *reset two-factor* permission can clear it from `Users → (the
+user)`. If nobody can, from the server: `php artisan hawala:reset-two-factor
+their@email.com` — they then set it up again at their next login.
+
+**Never change `APP_KEY` on a live system.** Two-factor secrets are encrypted
+with it; a new key makes every one unreadable and locks everybody out (fixed
+only by resetting each user with the command above). That includes
+`key:generate --force` — use it on a fresh install only.
 
 **A config change seems ignored.** `config:cache` froze the old values. Run
 `php artisan config:clear && php artisan config:cache`.

@@ -22,10 +22,8 @@
 
         <x-card :title="__('Commission')">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <x-select name="commission_send_type" label="{{ __('Default send commission type') }}" :options="\App\Enums\CommissionType::options()" :value="$settings['commission']['send_type']" />
-                <x-input name="commission_send_value" label="{{ __('Default send commission value') }}" type="number" min="0" :value="$settings['commission']['send_value']" hint="{{ __('Basis points if percent (500 = 5%), cents if flat.') }}" />
-                <x-select name="commission_payout_type" label="{{ __('Default payout commission type') }}" :options="\App\Enums\CommissionType::options()" :value="$settings['commission']['payout_type']" />
-                <x-input name="commission_payout_value" label="{{ __('Default payout commission value') }}" type="number" min="0" :value="$settings['commission']['payout_value']" hint="{{ __('Basis points if percent, cents if flat.') }}" />
+                <x-commission-fields type-name="commission_send_type" value-name="commission_send_value" :type-label="__('Default send commission type')" :value-label="__('Default send commission value')" :type="$settings['commission']['send_type']" :value="$settings['commission']['send_value']" :allow-default="false" />
+                <x-commission-fields type-name="commission_payout_type" value-name="commission_payout_value" :type-label="__('Default payout commission type')" :value-label="__('Default payout commission value')" :type="$settings['commission']['payout_type']" :value="$settings['commission']['payout_value']" :allow-default="false" :percent-hint="__('Percent of the fee left after the sending agent\'s share. Type 20 for 20%.')" />
             </div>
             <div class="mt-5">
                 <x-checkbox name="commission_move_requires_approval" label="{{ __('Commission move to send balance requires admin approval') }}" :checked="$settings['commission']['move_requires_approval']" />
@@ -170,6 +168,15 @@
 
         <x-card :title="__('Receipts')">
             <x-checkbox name="receipts_enabled" label="{{ __('Enable transfer receipt PDFs') }}" :checked="$settings['receipts']['enabled']" />
+        </x-card>
+
+        <x-card :title="__('Security')">
+            <div class="space-y-5">
+                <x-checkbox name="security_two_factor_required" label="{{ __('Require two-factor authentication (authenticator app) for everyone') }}" :checked="$settings['security']['two_factor_required']" />
+                <div class="max-w-xs">
+                    <x-input name="security_idle_timeout_minutes" label="{{ __('Log out after inactivity (minutes)') }}" type="number" min="0" max="{{ config('session.lifetime') }}" :value="$settings['security']['idle_timeout_minutes']" hint="{{ __('0 turns it off. Cannot be longer than :max minutes.', ['max' => config('session.lifetime')]) }}" />
+                </div>
+            </div>
         </x-card>
 
         <x-card :title="__('General')">

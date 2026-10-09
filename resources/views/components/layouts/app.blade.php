@@ -194,5 +194,60 @@
             </main>
         </div>
     </div>
+
+    @php $idleMinutes = (int) \App\Support\Settings::get('security.idle_timeout_minutes', 15); @endphp
+    @if ($idleMinutes > 0)
+        {{-- Sign out after real inactivity. Typing or tapping counts as
+             activity and quietly tells the server, so a long form is safe;
+             a minute before the end a banner offers to stay signed in. --}}
+        <div
+            x-data="{
+                limit: {{ $idleMinutes * 60 }},
+                left: {{ $idleMinutes * 60 }},
+                lastActive: Date.now(),
+                lastPing: Date.now(),
+                csrf: document.querySelector('meta[name=csrf-token]').content,
+                init() {
+                    ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'].forEach(e =>
+                        window.addEventListener(e, () => this.activity(), { passive: true }));
+                    setInterval(() => this.tick(), 1000);
+                },
+                activity() {
+                    this.lastActive = Date.now();
+                    // Tell the server now and then, not on every mouse move.
+                    if (Date.now() - this.lastPing > Math.min(this.limit / 3, 120) * 1000) { this.ping(); }
+                },
+                stay() { this.lastActive = Date.now(); this.ping(); },
+                ping() {
+                    this.lastPing = Date.now();
+                    fetch('{{ route('session.keepalive') }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': this.csrf, 'Accept': 'application/json' },
+                    }).then(r => { if (r.status === 401 || r.status === 419) { this.leave(); } }).catch(() => {});
+                },
+                tick() {
+                    this.left = Math.max(0, Math.ceil(this.limit - (Date.now() - this.lastActive) / 1000));
+                    if (this.left === 0) { this.leave(); }
+                },
+                leave() {
+                    fetch('{{ route('logout') }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': this.csrf } })
+                        .finally(() => { window.location = '{{ route('login', ['idle' => 1]) }}'; });
+                },
+            }"
+            x-show="left <= 60"
+            x-cloak
+            class="fixed inset-x-0 bottom-0 z-50 p-4 sm:p-6 pointer-events-none"
+            role="alert"
+        >
+            <div class="pointer-events-auto mx-auto max-w-md rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-lg flex items-center justify-between gap-4">
+                <p class="text-sm font-medium text-amber-900">
+                    {{ __('You will be signed out in') }} <span x-text="left"></span> {{ __('seconds because you have been inactive.') }}
+                </p>
+                <button type="button" x-on:click="stay()" class="shrink-0 rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600">
+                    {{ __('Stay signed in') }}
+                </button>
+            </div>
+        </div>
+    @endif
 </body>
 </html>

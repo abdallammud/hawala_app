@@ -35,7 +35,8 @@ function countQueries(object $test, string $path): int
         $count++;
     });
 
-    $test->actingAs($test->admin)->get($path)->assertOk();
+    // The test clock jumps a day; keep the session fresh so the idle timeout stays out of it.
+    $test->actingAs($test->admin)->withSession(['last_activity_at' => now()->timestamp])->get($path)->assertOk();
 
     // Stop counting before the next measurement.
     DB::listen(fn () => null);

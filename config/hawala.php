@@ -60,6 +60,13 @@ return [
         'United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Turkey',
     ],
 
+    'security' => [
+        // Everyone must set up an authenticator app at first login.
+        'two_factor_required' => true,
+        // Minutes without activity before a signed-in user is logged out. 0 = never.
+        'idle_timeout_minutes' => 15,
+    ],
+
     'general' => [
         'company_name' => 'Blue Star',
         'timezone' => 'Africa/Mogadishu',

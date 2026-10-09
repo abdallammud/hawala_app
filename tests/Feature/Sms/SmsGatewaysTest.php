@@ -34,6 +34,7 @@ function settingsForm(array $overrides = []): array
         'currency_max_rate_age_hours' => '72',
         'payout_claim_minutes' => '30',
         'general_company_name' => 'Blue Star',
+        'security_idle_timeout_minutes' => 15,
         'general_timezone' => 'Africa/Mogadishu',
         'general_duplicate_warning_minutes' => '10',
     ], $overrides);
