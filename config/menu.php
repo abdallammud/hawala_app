@@ -20,6 +20,7 @@ return [
     ['label' => 'Cancellations', 'route' => 'cancellation-requests.index', 'match' => ['cancellation-requests.*'], 'icon' => 'x-circle', 'permission' => 'transfers.approve_cancel'],
     ['label' => 'Balance Requests', 'route' => 'balance-requests.index', 'match' => ['balance-requests.*', 'adjustments.*'], 'icon' => 'banknotes', 'permission' => 'balances.request'],
     ['label' => 'Commission', 'route' => 'commission.index', 'match' => ['commission.*'], 'icon' => 'gift', 'permission' => 'commission.view_own'],
+    ['label' => 'Expenses', 'route' => 'expenses.index', 'match' => ['expenses.*', 'expense-types.*'], 'icon' => 'wallet', 'permission' => 'expenses.view_own'],
     ['label' => 'Company Accounts', 'route' => 'company-accounts.index', 'match' => ['company-accounts.*'], 'icon' => 'building-library', 'permission' => 'company_accounts.view'],
     ['label' => 'Users', 'route' => 'users.index', 'match' => ['users.*', 'roles.*'], 'icon' => 'users', 'permission' => 'users.view'],
     ['label' => 'Setup', 'route' => 'setup.index', 'match' => ['setup.*'], 'icon' => 'cog-6-tooth', 'permission' => 'setup.branches'],

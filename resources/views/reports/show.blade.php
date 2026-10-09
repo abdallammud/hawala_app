@@ -45,6 +45,11 @@
                         <x-select name="agent_id" label="{{ __('Agent') }}" :options="$options['agents']" placeholder="{{ __('All agents') }}" :value="$filters->agentId" />
                     </div>
                 @endif
+                @if (in_array('expense_type', $available))
+                    <div class="w-full sm:w-52">
+                        <x-select name="expense_type_id" label="{{ __('Expense type') }}" :options="$options['expenseTypes']" placeholder="{{ __('All types') }}" :value="$filters->expenseTypeId" />
+                    </div>
+                @endif
                 @if (in_array('customer', $available))
                     <div class="w-full sm:w-64">
                         <x-select name="customer_id" label="{{ __('Customer') }}" :options="$options['customers']" placeholder="{{ __('Pick a customer') }}" :value="$filters->customerId" />

@@ -7,6 +7,7 @@ use App\Models\AccountType;
 use App\Models\Branch;
 use App\Models\CompanyAccount;
 use App\Models\Currency;
+use App\Models\Expense;
 use App\Models\FeeTier;
 use App\Models\JournalLine;
 use App\Models\LedgerAccount;
@@ -183,6 +184,7 @@ describe('DemoSeeder', function () {
             ->and(Branch::count())->toBe(4)
             ->and(CompanyAccount::count())->toBe(3)
             ->and(User::where('email', 'ali@bluestar.test')->count())->toBe(1)
+            ->and(Expense::count())->toBe(4)
             ->and((int) JournalLine::sum('amount_cents'))->toBe(0);
 
         $this->artisan('hawala:verify-ledger')->assertSuccessful();

@@ -49,13 +49,14 @@ class ProfitReport extends Report
             'commission_expense' => __('Commission'),
             'bank_charges' => __('Bank charges'),
             'adjustments' => __('Adjustments'),
+            'expenses' => __('Expenses'),
             'net' => __('Net'),
         ];
     }
 
     public function moneyColumns(): array
     {
-        return ['fee_income', 'fx_income', 'commission_expense', 'bank_charges', 'adjustments', 'net'];
+        return ['fee_income', 'fx_income', 'commission_expense', 'bank_charges', 'adjustments', 'expenses', 'net'];
     }
 
     public function rows(ReportFilters $filters, User $user): Collection
@@ -66,6 +67,7 @@ class ProfitReport extends Report
             LedgerAccountType::CommissionExpense,
             LedgerAccountType::BankCharges,
             LedgerAccountType::Adjustments,
+            LedgerAccountType::Expenses,
         ];
 
         $monthly = $filters->groupBy === 'month';
@@ -102,6 +104,7 @@ class ProfitReport extends Report
                 $commission = $sum(LedgerAccountType::CommissionExpense);
                 $bankCharges = $sum(LedgerAccountType::BankCharges);
                 $adjustments = $sum(LedgerAccountType::Adjustments);
+                $expenses = $sum(LedgerAccountType::Expenses);
 
                 return [
                     'period' => $period,
@@ -110,7 +113,8 @@ class ProfitReport extends Report
                     'commission_expense' => $commission,
                     'bank_charges' => $bankCharges,
                     'adjustments' => $adjustments,
-                    'net' => $feeIncome + $fxIncome - $commission - $bankCharges - $adjustments,
+                    'expenses' => $expenses,
+                    'net' => $feeIncome + $fxIncome - $commission - $bankCharges - $adjustments - $expenses,
                 ];
             })
             ->sortKeys()

@@ -120,6 +120,7 @@ class AdjustmentsController extends Controller
             LedgerAccountType::CommissionExpense,
             LedgerAccountType::BankCharges,
             LedgerAccountType::Adjustments,
+            LedgerAccountType::Expenses,
         ];
     }
 }

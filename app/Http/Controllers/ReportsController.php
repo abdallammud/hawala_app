@@ -6,6 +6,7 @@ use App\Enums\UserType;
 use App\Models\AccountType;
 use App\Models\Branch;
 use App\Models\Customer;
+use App\Models\ExpenseType;
 use App\Models\User;
 use App\Reports\AgentStatementReport;
 use App\Reports\Report;
@@ -102,6 +103,7 @@ class ReportsController extends Controller
                 ->when(! $user->can('transfers.view_all'), fn ($q) => $q->whereKey($user->id))
                 ->orderBy('name')
                 ->pluck('name', 'id'),
+            'expenseTypes' => ExpenseType::query()->orderBy('sort')->orderBy('name')->pluck('name', 'id'),
             'customers' => Customer::query()
                 ->visibleTo($user)
                 ->orderBy('name')

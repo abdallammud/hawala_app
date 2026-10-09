@@ -17,4 +17,6 @@ enum JournalType: string
     case PayoutReturn = 'payout_return';
     case CompanyTransfer = 'company_transfer';
     case ManualAdjustment = 'manual_adjustment';
+    case Expense = 'expense';
+    case ExpenseVoid = 'expense_void';
 }

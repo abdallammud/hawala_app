@@ -15,6 +15,7 @@ enum LedgerAccountType: string
     case CommissionExpense = 'commission_expense';
     case BankCharges = 'bank_charges';
     case Adjustments = 'adjustments';
+    case Expenses = 'expenses';
 
     /**
      * Natural side — BUILD.md §4. Determines how a signed journal line
@@ -24,7 +25,7 @@ enum LedgerAccountType: string
     {
         return match ($this) {
             self::Company, self::AgentCredit, self::AgentPayout,
-            self::CommissionExpense, self::BankCharges, self::Adjustments => NormalSide::Debit,
+            self::CommissionExpense, self::BankCharges, self::Adjustments, self::Expenses => NormalSide::Debit,
 
             self::AgentSend, self::AgentCommission, self::TransfersPayable,
             self::FeeIncome, self::FxIncome => NormalSide::Credit,
@@ -57,6 +58,7 @@ enum LedgerAccountType: string
             self::CommissionExpense => __('Commission expense'),
             self::BankCharges => __('Bank charges'),
             self::Adjustments => __('Adjustments'),
+            self::Expenses => __('Operating expenses'),
         };
     }
 }

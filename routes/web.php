@@ -7,6 +7,8 @@ use App\Http\Controllers\Balances\CommissionController;
 use App\Http\Controllers\Balances\CompanyAccountsController;
 use App\Http\Controllers\Customers\CustomersController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Expenses\ExpensesController;
+use App\Http\Controllers\Expenses\ExpenseTypesController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\Setup\AccountTypesController;
@@ -150,6 +152,34 @@ Route::middleware('auth')->group(function () {
         Route::get('/customers/{customer}/edit', [CustomersController::class, 'edit'])->name('customers.edit');
         Route::put('/customers/{customer}', [CustomersController::class, 'update'])->name('customers.update');
     });
+
+    // --- Expenses --------------------------------------------------------------
+    // Static segments (create, types) before the {expense} wildcard.
+    Route::middleware('can:expenses.types')->prefix('expenses/types')->name('expense-types.')->group(function () {
+        Route::get('/', [ExpenseTypesController::class, 'index'])->name('index');
+        Route::post('/', [ExpenseTypesController::class, 'store'])->name('store');
+        Route::get('/{expenseType}/edit', [ExpenseTypesController::class, 'edit'])->name('edit');
+        Route::put('/{expenseType}', [ExpenseTypesController::class, 'update'])->name('update');
+        Route::post('/{expenseType}/toggle', [ExpenseTypesController::class, 'toggle'])->name('toggle');
+    });
+
+    Route::middleware('can:expenses.create')->group(function () {
+        Route::get('/expenses/create', [ExpensesController::class, 'create'])->name('expenses.create');
+        Route::post('/expenses', [ExpensesController::class, 'store'])->name('expenses.store');
+    });
+
+    Route::middleware('can:expenses.view_own')->group(function () {
+        Route::get('/expenses', [ExpensesController::class, 'index'])->name('expenses.index');
+        Route::get('/expenses/{expense}', [ExpensesController::class, 'show'])->name('expenses.show');
+    });
+
+    Route::middleware('can:expenses.edit')->group(function () {
+        Route::get('/expenses/{expense}/edit', [ExpensesController::class, 'edit'])->name('expenses.edit');
+        Route::put('/expenses/{expense}', [ExpensesController::class, 'update'])->name('expenses.update');
+    });
+
+    Route::post('/expenses/{expense}/void', [ExpensesController::class, 'void'])
+        ->middleware('can:expenses.void')->name('expenses.void');
 
     // --- Payout queue --------------------------------------------------------
     Route::middleware('can:queue.view')->group(function () {

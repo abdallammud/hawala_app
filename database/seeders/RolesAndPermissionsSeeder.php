@@ -39,9 +39,12 @@ class RolesAndPermissionsSeeder extends Seeder
         'reports.transfers', 'reports.agent_statement', 'reports.uncollected', 'reports.credit',
         'reports.commissions', 'reports.payouts_by_method', 'reports.branch_summary',
         'reports.profit', 'reports.large_transfers', 'reports.cancellations', 'reports.company_accounts',
-        'reports.customers',
+        'reports.customers', 'reports.expenses',
 
         'customers.view_own', 'customers.view_all', 'customers.edit',
+
+        'expenses.view_own', 'expenses.view_branch', 'expenses.view_all', 'expenses.create',
+        'expenses.edit', 'expenses.void', 'expenses.types',
 
         'audit.view',
 

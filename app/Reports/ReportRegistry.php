@@ -22,6 +22,8 @@ class ReportRegistry
         CompanyAccountsReport::class,
         CustomersReport::class,
         CustomerStatementReport::class,
+        ExpensesReport::class,
+        ExpensesByTypeReport::class,
     ];
 
     /** @return Collection<int, Report> */

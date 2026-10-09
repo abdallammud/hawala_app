@@ -28,6 +28,9 @@ class LedgerService
      * @param  array<int, array{0: LedgerAccount, 1: int}>  $lines  [LedgerAccount, signedCents] pairs.
      *                                                              Positive = debit, negative = credit.
      *                                                              Omit zero-amount lines — don't pass them.
+     * @param  array<int, int>  $nonNegativeAccountIds  accounts that must not end below zero for this entry
+     *                                                  even though their type is not guarded in general
+     *                                                  (e.g. the company account an expense is paid from).
      */
     public function post(
         JournalType $type,
@@ -36,6 +39,7 @@ class LedgerService
         User $by,
         ?User $approvedBy = null,
         ?string $memo = null,
+        array $nonNegativeAccountIds = [],
     ): JournalEntry {
         if (count($lines) < 2) {
             throw new UnbalancedEntryException('A journal entry needs at least two lines.');
@@ -55,7 +59,7 @@ class LedgerService
             throw new UnbalancedEntryException('Journal entry lines must sum to exactly zero.');
         }
 
-        return DB::transaction(function () use ($type, $deltasByAccountId, $reference, $by, $approvedBy, $memo) {
+        return DB::transaction(function () use ($type, $deltasByAccountId, $reference, $by, $approvedBy, $memo, $nonNegativeAccountIds) {
             $accountIds = array_keys($deltasByAccountId);
             sort($accountIds);
 
@@ -75,7 +79,7 @@ class LedgerService
                     ? $account->balance_cents + $delta
                     : $account->balance_cents - $delta;
 
-                if ($newBalance < 0 && $this->isGuarded($account)) {
+                if ($newBalance < 0 && ($this->isGuarded($account) || in_array($accountId, $nonNegativeAccountIds, true))) {
                     throw InsufficientBalanceException::forAccount($account, $newBalance);
                 }
 

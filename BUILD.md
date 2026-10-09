@@ -835,4 +835,11 @@ Tracking number = the automatic transfer code. 2FA = authenticator app (TOTP), s
 - [x] 8 PDF receipt on by default; shows tracking number and both locations
 - [ ] 6 Exchange rate must match XE — waiting on decision (XE needs its own paid API account)
 ### v1.1 phase 4 — Expenses
+- [x] One top-level Expenses menu, tabbed (Expenses | Expense types); no sub-menu
+- [x] Customer-editable expense types (seeded: Staff Payroll, Office Rent, Bills (Internet & airtime), Running Cost);
+      deactivated, never deleted
+- [x] Expenses are paid from a company account and post to the ledger (Dr Operating expenses / Cr company
+      account); blocked if the account can't cover it; voiding posts the reverse entry; branch comes from the user
+- [x] Permissions `expenses.view_own|view_branch|view_all|create|edit|void|types`; reports Expenses and
+      Expenses by type (`reports.expenses`); Profit report has an Expenses column
 ### v1.1 phase 5 — 2FA (authenticator app) and session timeout

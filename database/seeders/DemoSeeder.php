@@ -7,14 +7,17 @@ use App\Enums\JournalType;
 use App\Enums\LedgerAccountType;
 use App\Enums\QuoteMode;
 use App\Enums\UserType;
+use App\Exceptions\Ledger\InsufficientBalanceException;
 use App\Models\AccountType;
 use App\Models\Branch;
 use App\Models\CompanyAccount;
 use App\Models\Currency;
 use App\Models\ExchangeRate;
+use App\Models\ExpenseType;
 use App\Models\PayoutAccount;
 use App\Models\Transfer;
 use App\Models\User;
+use App\Services\Expenses\ExpenseService;
 use App\Services\Ledger\LedgerService;
 use App\Services\Transfers\PayoutQueueService;
 use App\Services\Transfers\TransferCancellationService;
@@ -23,6 +26,7 @@ use App\Support\Settings;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Ramsey\Uuid\Uuid;
 
 /**
  * A believable demo dataset (BUILD.md §15). Local only.
@@ -77,6 +81,7 @@ class DemoSeeder extends Seeder
 
         $this->fundEverybody($companyAccounts, $senders, $payers, $admin);
         $this->transfers($senders, $payers, $branches, $admin);
+        $this->expenses($admin, $companyAccounts['bank']);
 
         $this->command?->info('Demo data ready. Log in as admin@bluestar.test / '.self::PASSWORD);
     }
@@ -118,6 +123,35 @@ class DemoSeeder extends Seeder
         }
 
         return $created;
+    }
+
+    /** A few months' worth of the usual costs, so the Expenses screens have something in them. */
+    private function expenses(User $admin, CompanyAccount $paidFrom): void
+    {
+        $service = app(ExpenseService::class);
+        $types = ExpenseType::query()->pluck('id', 'name');
+
+        $items = [
+            ['Staff Payroll', 120000, 'Mogadishu staff', 20],
+            ['Office Rent', 60000, 'Landlord', 18],
+            ['Bills (Internet & airtime)', 8500, 'Hormuud', 12],
+            ['Running Cost', 4200, 'Generator fuel', 5],
+        ];
+
+        foreach ($items as [$type, $cents, $payee, $daysAgo]) {
+            try {
+                $service->record(
+                    $admin,
+                    ExpenseType::findOrFail($types[$type]),
+                    $paidFrom,
+                    ['amount_cents' => $cents, 'expense_date' => now()->subDays($daysAgo)->toDateString(), 'payee' => $payee],
+                    // Fixed token per item, so seeding twice records each once.
+                    (string) Uuid::uuid5(Uuid::NAMESPACE_DNS, 'demo-expense-'.Str::slug($type)),
+                );
+            } catch (InsufficientBalanceException) {
+                // The demo account is too thin for this one — skip it, it's only sample data.
+            }
+        }
     }
 
     private function admin(): User
