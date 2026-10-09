@@ -58,7 +58,7 @@ class BranchSummaryReport extends Report
     public function rows(ReportFilters $filters, User $user): Collection
     {
         $transfers = Transfer::query()
-            ->visibleTo($user)
+            ->reportableBy($user)
             ->whereBetween('created_at', [$filters->from, $filters->to])
             ->get()
             ->groupBy('branch_id');

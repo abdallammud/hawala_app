@@ -826,6 +826,13 @@ Tracking number = the automatic transfer code. 2FA = authenticator app (TOTP), s
       matches sender, claimer or payer
 - [x] Tests for the same-user case (balances, company share, verify-ledger)
 
-### v1.1 phase 3 — Customers, own reports, PDF receipt, locations (items 4, 5, 8, 9; 6 needs XE decision)
+### v1.1 phase 3 — Customers, own reports, PDF receipt, locations (items 4, 5, 8, 9)
+- [x] 9 Country / city / province for sender and receiver (two fieldsets; country + city required)
+- [x] 4 Customers: one per sender phone (digits-only), search-as-you-type on New Transfer, Customers menu
+      (list, profile, edit), `customers` and `customer-statement` reports; existing transfers backfilled
+- [x] 5 Own reports: `Transfer::reportableBy` (agents see what they sent/claimed/paid, not the branch);
+      credit, cancellations, payouts-by-method scoped; agent filter lists only the user
+- [x] 8 PDF receipt on by default; shows tracking number and both locations
+- [ ] 6 Exchange rate must match XE — waiting on decision (XE needs its own paid API account)
 ### v1.1 phase 4 — Expenses
 ### v1.1 phase 5 — 2FA (authenticator app) and session timeout

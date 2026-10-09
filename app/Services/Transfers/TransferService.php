@@ -14,6 +14,7 @@ use App\Models\Transfer;
 use App\Models\User;
 use App\Notifications\LargeTransferCreated;
 use App\Services\CommissionCalculator;
+use App\Services\Customers\CustomerService;
 use App\Services\Ledger\LedgerService;
 use App\Services\Rates\QuoteService;
 use App\Support\Settings;
@@ -26,6 +27,7 @@ class TransferService
         private LedgerService $ledger,
         private QuoteService $quotes,
         private CommissionCalculator $commissions,
+        private CustomerService $customers,
     ) {}
 
     /**
@@ -55,7 +57,8 @@ class TransferService
      * customer hands over in `currency`, in Receive mode it is what the
      * receiver is paid, in `payout_currency` (USD unless the agent changed it).
      *
-     * @param  array{sender_name:string,sender_phone:string,receiver_name:string,receiver_phone:string,
+     * @param  array{sender_name:string,sender_phone:string,sender_country?:?string,sender_city?:?string,sender_province?:?string,
+     *               receiver_name:string,receiver_phone:string,receiver_country?:?string,receiver_city?:?string,receiver_province?:?string,
      *               receiver_account_type_id:?int,receiver_account_number:?string,
      *               currency:string,amount_cents:int,mode?:QuoteMode,payout_currency?:string,
      *               is_uncollected:bool,note:?string}  $data
@@ -97,16 +100,25 @@ class TransferService
         $status = ($isLarge && $holdLarge) ? TransferStatus::AwaitingApproval : TransferStatus::Queued;
 
         $transfer = DB::transaction(function () use ($agent, $branch, $code, $data, $idempotencyKey, $quote, $sendingShare, $isLarge, $status, $marginBp) {
+            $customer = $this->customers->resolve($data, $agent);
+
             $transfer = Transfer::create([
                 'code' => $code,
                 'idempotency_key' => $idempotencyKey,
                 'sending_agent_id' => $agent->id,
+                'customer_id' => $customer->id,
                 'branch_id' => $branch->id,
                 'origin_branch_id' => $agent->branch_id,
                 'sender_name' => $data['sender_name'],
                 'sender_phone' => $data['sender_phone'],
+                'sender_country' => $data['sender_country'] ?? null,
+                'sender_city' => $data['sender_city'] ?? null,
+                'sender_province' => $data['sender_province'] ?? null,
                 'receiver_name' => $data['receiver_name'],
                 'receiver_phone' => $data['receiver_phone'],
+                'receiver_country' => $data['receiver_country'] ?? null,
+                'receiver_city' => $data['receiver_city'] ?? null,
+                'receiver_province' => $data['receiver_province'] ?? null,
                 'receiver_account_type_id' => $data['receiver_account_type_id'] ?? null,
                 'receiver_account_number' => $data['receiver_account_number'] ?? null,
                 'original_currency' => $data['currency'],

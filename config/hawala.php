@@ -47,7 +47,17 @@ return [
     ],
 
     'receipts' => [
-        'enabled' => false,
+        'enabled' => true,
+    ],
+
+    // Suggestions for the country boxes on the transfer form. Free text is
+    // still accepted — this only saves typing.
+    'countries' => [
+        'Somalia', 'Ethiopia', 'Kenya', 'Djibouti', 'Eritrea', 'Uganda', 'Tanzania', 'Egypt', 'Yemen', 'South Africa',
+        'Sweden', 'Norway', 'Denmark', 'Finland', 'Netherlands', 'Belgium', 'Germany', 'France', 'United Kingdom',
+        'Ireland', 'Italy', 'Spain', 'Switzerland', 'Austria', 'Poland', 'Greece', 'Malta',
+        'Canada', 'United States', 'Australia', 'New Zealand',
+        'United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Turkey',
     ],
 
     'general' => [

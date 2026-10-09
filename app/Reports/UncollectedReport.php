@@ -61,7 +61,7 @@ class UncollectedReport extends Report
     public function rows(ReportFilters $filters, User $user): Collection
     {
         return Transfer::query()
-            ->visibleTo($user)
+            ->reportableBy($user)
             ->with('sendingAgent')
             ->where('is_uncollected', true)
             ->whereNull('fully_collected_at')

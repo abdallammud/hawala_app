@@ -57,7 +57,7 @@ class PayoutsByMethodReport extends Report
     public function rows(ReportFilters $filters, User $user): Collection
     {
         return Transfer::query()
-            ->visibleTo($user)
+            ->reportableBy($user)
             ->with(['payoutAccount.accountType', 'paidBy'])
             ->where('status', TransferStatus::Paid)
             ->whereNotNull('payout_account_id')

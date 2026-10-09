@@ -55,7 +55,7 @@ class LargeTransfersReport extends Report
     public function rows(ReportFilters $filters, User $user): Collection
     {
         return Transfer::query()
-            ->visibleTo($user)
+            ->reportableBy($user)
             ->with(['sendingAgent', 'branch'])
             ->where('is_large', true)
             ->whereBetween('created_at', [$filters->from, $filters->to])

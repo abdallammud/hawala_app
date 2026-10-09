@@ -39,6 +39,9 @@ class RolesAndPermissionsSeeder extends Seeder
         'reports.transfers', 'reports.agent_statement', 'reports.uncollected', 'reports.credit',
         'reports.commissions', 'reports.payouts_by_method', 'reports.branch_summary',
         'reports.profit', 'reports.large_transfers', 'reports.cancellations', 'reports.company_accounts',
+        'reports.customers',
+
+        'customers.view_own', 'customers.view_all', 'customers.edit',
 
         'audit.view',
 
@@ -55,7 +58,9 @@ class RolesAndPermissionsSeeder extends Seeder
         'transfers.record_collection', 'transfers.export',
         'balances.request',
         'commission.view_own', 'commission.move', 'commission.request_withdraw',
+        'customers.view_own',
         'reports.transfers', 'reports.agent_statement', 'reports.uncollected', 'reports.commissions',
+        'reports.credit', 'reports.cancellations', 'reports.customers',
     ];
 
     private const PAYOUT_AGENT = [
@@ -64,7 +69,8 @@ class RolesAndPermissionsSeeder extends Seeder
         'queue.view', 'queue.claim', 'queue.mark_paid',
         'balances.request',
         'commission.view_own', 'commission.request_withdraw',
-        'reports.agent_statement', 'reports.payouts_by_method', 'reports.commissions',
+        'reports.transfers', 'reports.agent_statement', 'reports.payouts_by_method', 'reports.commissions',
+        'reports.cancellations',
     ];
 
     public function run(): void

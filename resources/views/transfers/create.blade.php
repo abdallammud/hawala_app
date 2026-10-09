@@ -108,13 +108,93 @@
                 <p class="hidden sm:block text-xs text-brand-700 text-right">{{ __('Give this number to the customer.') }}</p>
             </div>
 
-            <x-card :title="__('Customer')">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <x-input name="sender_name" label="{{ __('Sender name') }}" autofocus />
-                    <x-input name="sender_phone" label="{{ __('Sender phone') }}" />
-                    <x-input name="receiver_name" label="{{ __('Receiver name') }}" />
-                    <x-input name="receiver_phone" label="{{ __('Receiver phone') }}" />
-                </div>
+            <datalist id="country-list">
+                @foreach ($countries as $country)
+                    <option value="{{ $country }}"></option>
+                @endforeach
+            </datalist>
+
+            {{-- Sender: pick a saved customer to fill the boxes, or type a new one. --}}
+            <x-card :title="__('Sender')" :subtitle="__('The person handing over the money.')">
+                <fieldset
+                    class="space-y-5"
+                    x-data="{
+                        q: '',
+                        open: false,
+                        loading: false,
+                        results: [],
+                        picked: '',
+                        async search() {
+                            this.picked = '';
+                            if (this.q.trim().length < 2) { this.results = []; this.open = false; return; }
+                            this.loading = true; this.open = true;
+                            try {
+                                const res = await fetch('{{ route('customers.search') }}?q=' + encodeURIComponent(this.q.trim()), {
+                                    headers: { 'Accept': 'application/json' },
+                                });
+                                this.results = res.ok ? await res.json() : [];
+                            } catch (e) { this.results = []; }
+                            this.loading = false;
+                        },
+                        fill(name, value) {
+                            const el = this.$root.querySelector('[name=' + name + ']');
+                            if (el) { el.value = value || ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
+                        },
+                        pick(c) {
+                            this.fill('sender_name', c.name);
+                            this.fill('sender_phone', c.phone_display);
+                            this.fill('sender_country', c.country);
+                            this.fill('sender_city', c.city);
+                            this.fill('sender_province', c.province);
+                            this.picked = c.name + ' — ' + c.phone_display;
+                            this.q = ''; this.results = []; this.open = false;
+                        },
+                    }"
+                >
+                    <legend class="sr-only">{{ __('Sender') }}</legend>
+
+                    <div class="relative" x-on:click.outside="open = false">
+                        <label for="customer_search" class="block text-sm font-medium text-slate-700 mb-1.5">{{ __('Find an existing customer') }}</label>
+                        <input
+                            id="customer_search" type="search" autocomplete="off"
+                            x-model="q" x-on:input.debounce.300ms="search()" x-on:focus="open = results.length > 0"
+                            placeholder="{{ __('Type a name or phone number') }}"
+                            class="block w-full rounded-lg border border-slate-300 py-3 text-base sm:py-2.5 sm:text-sm pl-3.5 pr-3.5 shadow-sm focus:outline-none focus:ring-2 focus:border-brand-500 focus:ring-brand-100"
+                        />
+                        <div x-show="open" x-cloak class="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg max-h-72 overflow-auto">
+                            <template x-for="c in results" :key="c.id">
+                                <button type="button" x-on:click="pick(c)" class="block w-full text-left px-4 py-3 hover:bg-brand-50 border-b border-slate-100 last:border-0">
+                                    <span class="block text-sm font-medium text-slate-900" x-text="c.name"></span>
+                                    <span class="block text-xs text-slate-500" x-text="c.phone_display + (c.location ? ' · ' + c.location : '')"></span>
+                                </button>
+                            </template>
+                            <p x-show="!loading && results.length === 0" class="px-4 py-3 text-sm text-slate-500">{{ __('No saved customer matches — fill in the details below to add a new one.') }}</p>
+                        </div>
+                        <p x-show="picked" x-cloak class="mt-1.5 text-xs text-emerald-700" x-text="'{{ __('Using saved customer') }}: ' + picked"></p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <x-input name="sender_name" label="{{ __('Name') }}" :value="$prefill?->name" autofocus />
+                        <x-input name="sender_phone" label="{{ __('Phone') }}" :value="$prefill?->phone" />
+                        <x-input name="sender_country" label="{{ __('Country') }}" list="country-list" :value="$prefill?->country ?? $senderDefaults['country']" />
+                        <x-input name="sender_city" label="{{ __('City') }}" :value="$prefill?->city ?? $senderDefaults['city']" />
+                        <x-input name="sender_province" label="{{ __('Province / region') }}" :value="$prefill?->province ?? $senderDefaults['province']" hint="{{ __('Optional') }}" />
+                    </div>
+                </fieldset>
+            </x-card>
+
+            <x-card :title="__('Receiver')" :subtitle="__('The person collecting the money.')">
+                <fieldset class="space-y-5">
+                    <legend class="sr-only">{{ __('Receiver') }}</legend>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                        <x-input name="receiver_name" label="{{ __('Name') }}" />
+                        <x-input name="receiver_phone" label="{{ __('Phone') }}" />
+                        <x-input name="receiver_country" label="{{ __('Country') }}" list="country-list" value="Somalia" />
+                        <x-input name="receiver_city" label="{{ __('City') }}" />
+                        <x-input name="receiver_province" label="{{ __('Province / region') }}" hint="{{ __('Optional') }}" />
+                    </div>
+                </fieldset>
             </x-card>
 
             <x-card :title="__('Amount')">

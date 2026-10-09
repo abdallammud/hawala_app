@@ -19,6 +19,7 @@ class ReportFilters
         public readonly ?string $status = null,
         public readonly ?string $accountType = null,
         public readonly ?string $groupBy = null,
+        public readonly ?int $customerId = null,
     ) {}
 
     public static function fromRequest(Request $request): self
@@ -40,6 +41,7 @@ class ReportFilters
             status: $request->filled('status') ? $request->string('status')->toString() : null,
             accountType: $request->filled('account_type') ? $request->string('account_type')->toString() : null,
             groupBy: $request->filled('group_by') ? $request->string('group_by')->toString() : null,
+            customerId: $request->filled('customer_id') ? $request->integer('customer_id') : null,
         );
     }
 
@@ -53,6 +55,7 @@ class ReportFilters
             'status' => $this->status,
             'account_type' => $this->accountType,
             'group_by' => $this->groupBy,
+            'customer_id' => $this->customerId,
         ], fn ($v) => $v !== null);
     }
 }

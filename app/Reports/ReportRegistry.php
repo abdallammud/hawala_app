@@ -20,6 +20,8 @@ class ReportRegistry
         LargeTransfersReport::class,
         CancellationsReport::class,
         CompanyAccountsReport::class,
+        CustomersReport::class,
+        CustomerStatementReport::class,
     ];
 
     /** @return Collection<int, Report> */

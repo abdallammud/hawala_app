@@ -59,11 +59,20 @@
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">{{ __('Sender') }}</p>
                         <p class="text-slate-900 mt-1">{{ $transfer->sender_name }}</p>
                         <p class="text-slate-500">{{ $transfer->sender_phone }}</p>
+                        @if ($location = collect([$transfer->sender_city, $transfer->sender_province, $transfer->sender_country])->filter()->implode(', '))
+                            <p class="text-slate-500">{{ $location }}</p>
+                        @endif
+                        @if ($transfer->customer_id && auth()->user()->can('view', $transfer->customer))
+                            <a href="{{ route('customers.show', $transfer->customer_id) }}" class="text-xs text-brand-600 hover:text-brand-700">{{ __('Customer profile') }}</a>
+                        @endif
                     </div>
                     <div>
                         <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">{{ __('Receiver') }}</p>
                         <p class="text-slate-900 mt-1">{{ $transfer->receiver_name }}</p>
                         <p class="text-slate-500">{{ $transfer->receiver_phone }}</p>
+                        @if ($location = collect([$transfer->receiver_city, $transfer->receiver_province, $transfer->receiver_country])->filter()->implode(', '))
+                            <p class="text-slate-500">{{ $location }}</p>
+                        @endif
                         @if ($transfer->receiverAccountType)
                             <p class="text-slate-500 mt-1">
                                 {{ $transfer->receiverAccountType->name }}

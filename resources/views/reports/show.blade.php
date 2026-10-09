@@ -45,6 +45,11 @@
                         <x-select name="agent_id" label="{{ __('Agent') }}" :options="$options['agents']" placeholder="{{ __('All agents') }}" :value="$filters->agentId" />
                     </div>
                 @endif
+                @if (in_array('customer', $available))
+                    <div class="w-full sm:w-64">
+                        <x-select name="customer_id" label="{{ __('Customer') }}" :options="$options['customers']" placeholder="{{ __('Pick a customer') }}" :value="$filters->customerId" />
+                    </div>
+                @endif
                 @if (in_array('status', $available))
                     <div class="w-full sm:w-44">
                         <x-select name="status" label="{{ __('Status') }}" :options="$options['statuses']" placeholder="{{ __('All statuses') }}" :value="$filters->status" />
@@ -67,7 +72,11 @@
         </div>
 
         @if ($rows->isEmpty())
-            <x-empty-state icon="chart-bar" title="{{ __('Nothing in this range') }}" description="{{ __('Try a wider date range or different filters.') }}" />
+            @if (in_array('customer', $available) && ! $filters->customerId)
+                <x-empty-state icon="users" title="{{ __('Pick a customer') }}" description="{{ __('Choose a customer above to see their transfers.') }}" />
+            @else
+                <x-empty-state icon="chart-bar" title="{{ __('Nothing in this range') }}" description="{{ __('Try a wider date range or different filters.') }}" />
+            @endif
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">

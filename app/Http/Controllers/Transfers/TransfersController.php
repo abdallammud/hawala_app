@@ -12,6 +12,7 @@ use App\Http\Requests\Transfers\StoreTransferRequest;
 use App\Models\AccountType;
 use App\Models\Branch;
 use App\Models\Currency;
+use App\Models\Customer;
 use App\Models\Transfer;
 use App\Services\Transfers\ReceiptService;
 use App\Services\Transfers\TransferCancellationService;
@@ -79,6 +80,19 @@ class TransfersController extends Controller
             ->latest('id')
             ->value('original_currency');
 
+        // "New transfer" from a customer's page arrives with ?customer=ID.
+        $prefill = null;
+
+        if ($request->filled('customer')) {
+            $prefill = Customer::query()->visibleTo($request->user())->find($request->integer('customer'));
+        }
+
+        // Most agents send from one place: start on the last country used.
+        $lastSender = Transfer::query()
+            ->where('sending_agent_id', $request->user()->id)
+            ->latest('id')
+            ->first(['sender_country', 'sender_city', 'sender_province']);
+
         // Keep the token (and so the tracking number) across a failed submit.
         $idempotencyKey = $request->old('idempotency_key') ?: (string) Str::uuid();
 
@@ -88,6 +102,13 @@ class TransfersController extends Controller
             'currencies' => $currencies,
             'payCurrency' => $currencies->has($lastCurrency) ? $lastCurrency : 'USD',
             'accountTypes' => AccountType::query()->where('is_active', true)->orderBy('sort')->pluck('name', 'id'),
+            'prefill' => $prefill,
+            'senderDefaults' => [
+                'country' => $lastSender?->sender_country,
+                'city' => $lastSender?->sender_city,
+                'province' => $lastSender?->sender_province,
+            ],
+            'countries' => config('hawala.countries'),
             'idempotencyKey' => $idempotencyKey,
             'trackingNumber' => $this->transfers->reserveTrackingCode($idempotencyKey),
         ]);
@@ -129,8 +150,14 @@ class TransfersController extends Controller
             $transfer = $this->transfers->create($agent, $branch, [
                 'sender_name' => $request->string('sender_name'),
                 'sender_phone' => $request->string('sender_phone'),
+                'sender_country' => $request->string('sender_country')->trim()->toString(),
+                'sender_city' => $request->string('sender_city')->trim()->toString(),
+                'sender_province' => $request->filled('sender_province') ? $request->string('sender_province')->trim()->toString() : null,
                 'receiver_name' => $request->string('receiver_name'),
                 'receiver_phone' => $request->string('receiver_phone'),
+                'receiver_country' => $request->string('receiver_country')->trim()->toString(),
+                'receiver_city' => $request->string('receiver_city')->trim()->toString(),
+                'receiver_province' => $request->filled('receiver_province') ? $request->string('receiver_province')->trim()->toString() : null,
                 'receiver_account_type_id' => $request->input('receiver_account_type_id'),
                 'receiver_account_number' => $request->input('receiver_account_number'),
                 'currency' => $request->string('currency'),

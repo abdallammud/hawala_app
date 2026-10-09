@@ -44,10 +44,10 @@ class ReceiptService
         $lines = [
             "*{$company}* — ".__('Transfer receipt'),
             '',
-            __('Reference').": {$transfer->code}",
+            __('Tracking number').": {$transfer->code}",
             __('Date').': '.$transfer->created_at->timezone($tz)->format('Y-m-d H:i'),
-            __('Sender').": {$transfer->sender_name}",
-            __('Receiver').": {$transfer->receiver_name} ({$transfer->receiver_phone})",
+            __('Sender').": {$transfer->sender_name}".$this->place($transfer->sender_city, $transfer->sender_country),
+            __('Receiver').": {$transfer->receiver_name} ({$transfer->receiver_phone})".$this->place($transfer->receiver_city, $transfer->receiver_country),
             __('Branch').': '.($transfer->branch?->name ?? '—'),
             __('Amount').': '.Money::format($transfer->amount_cents),
             __('Fee').': '.Money::format($transfer->fee_cents),
@@ -60,6 +60,14 @@ class ReceiptService
         $lines[] = __('Status').': '.$transfer->status->label();
 
         return implode("\n", $lines);
+    }
+
+    /** " — Mogadishu, Somalia" or nothing. */
+    private function place(?string $city, ?string $country): string
+    {
+        $place = collect([$city, $country])->filter()->implode(', ');
+
+        return $place === '' ? '' : ' — '.$place;
     }
 
     public function whatsappUrl(Transfer $transfer): string

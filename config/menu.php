@@ -15,6 +15,7 @@ return [
     ['label' => 'Dashboard', 'route' => 'dashboard', 'match' => ['dashboard'], 'icon' => 'home', 'permission' => 'dashboard.view'],
     ['label' => 'New Transfer', 'route' => 'transfers.create', 'match' => ['transfers.create'], 'icon' => 'plus-circle', 'permission' => 'transfers.create'],
     ['label' => 'All Transfers', 'route' => 'transfers.index', 'match' => ['transfers.*'], 'icon' => 'arrow-right-left', 'permission' => 'transfers.view_own'],
+    ['label' => 'Customers', 'route' => 'customers.index', 'match' => ['customers.*'], 'icon' => 'users', 'permission' => 'customers.view_own'],
     ['label' => 'Payout Queue', 'route' => 'queue.index', 'match' => ['queue.*'], 'icon' => 'inbox-stack', 'permission' => 'queue.view'],
     ['label' => 'Cancellations', 'route' => 'cancellation-requests.index', 'match' => ['cancellation-requests.*'], 'icon' => 'x-circle', 'permission' => 'transfers.approve_cancel'],
     ['label' => 'Balance Requests', 'route' => 'balance-requests.index', 'match' => ['balance-requests.*', 'adjustments.*'], 'icon' => 'banknotes', 'permission' => 'balances.request'],

@@ -317,8 +317,13 @@ class DemoSeeder extends Seeder
             $transfer = $transfers->create($agent, $branch, [
                 'sender_name' => $senderNames[$i % count($senderNames)],
                 'sender_phone' => '+4670123'.str_pad((string) $i, 4, '0', STR_PAD_LEFT),
+                'sender_country' => $agent->branch?->city === 'Stockholm' ? 'Sweden' : 'United Kingdom',
+                'sender_city' => $agent->branch?->city ?? 'London',
                 'receiver_name' => $receiver[0],
                 'receiver_phone' => $receiver[1],
+                'receiver_country' => 'Somalia',
+                'receiver_city' => $branchName,
+                'receiver_province' => $branchName === 'Hargeisa' ? 'Woqooyi Galbeed' : 'Banadir',
                 'receiver_account_type_id' => $i % 3 === 0 ? $evcPlus?->id : null,
                 'receiver_account_number' => $i % 3 === 0 ? '61'.str_pad((string) (1000000 + $i), 7, '0', STR_PAD_LEFT) : null,
                 'currency' => $inEuros ? 'EUR' : 'USD',

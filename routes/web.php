@@ -5,6 +5,7 @@ use App\Http\Controllers\Balances\AdjustmentsController;
 use App\Http\Controllers\Balances\BalanceRequestsController;
 use App\Http\Controllers\Balances\CommissionController;
 use App\Http\Controllers\Balances\CompanyAccountsController;
+use App\Http\Controllers\Customers\CustomersController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ReportsController;
@@ -134,6 +135,21 @@ Route::middleware('auth')->group(function () {
     Route::post('/transfers/{transfer}/approve-large', [TransfersController::class, 'approveLarge'])->name('transfers.approve-large');
     Route::post('/transfers/{transfer}/reject-large', [TransfersController::class, 'rejectLarge'])->name('transfers.reject-large');
     Route::post('/transfers/{transfer}/collections', [TransfersController::class, 'recordCollection'])->name('transfers.collections.store');
+
+    // --- Customers -------------------------------------------------------------
+    // Static segments (search) before the {customer} wildcard.
+    Route::get('/customers/search', [CustomersController::class, 'search'])
+        ->middleware(['can:transfers.create', 'throttle:60,1'])->name('customers.search');
+
+    Route::middleware('can:customers.view_own')->group(function () {
+        Route::get('/customers', [CustomersController::class, 'index'])->name('customers.index');
+        Route::get('/customers/{customer}', [CustomersController::class, 'show'])->name('customers.show');
+    });
+
+    Route::middleware('can:customers.edit')->group(function () {
+        Route::get('/customers/{customer}/edit', [CustomersController::class, 'edit'])->name('customers.edit');
+        Route::put('/customers/{customer}', [CustomersController::class, 'update'])->name('customers.update');
+    });
 
     // --- Payout queue --------------------------------------------------------
     Route::middleware('can:queue.view')->group(function () {

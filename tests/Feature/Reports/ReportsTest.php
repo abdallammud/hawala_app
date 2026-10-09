@@ -65,7 +65,7 @@ it('every registered report has a seeded permission and runs without error for a
 
     $registry = app(ReportRegistry::class);
 
-    expect($registry->all())->toHaveCount(11);
+    expect($registry->all())->toHaveCount(13);
 
     foreach ($registry->all() as $report) {
         // A report gated on a permission nobody can be granted is unreachable.
@@ -106,11 +106,11 @@ it('only lists reports the user has permission for', function () {
     $agent = H::sendingAgent(fundCents: 0);
     $registry = app(ReportRegistry::class);
 
-    expect($registry->visibleTo($admin))->toHaveCount(11);
+    expect($registry->visibleTo($admin))->toHaveCount(13);
 
     $agentReports = $registry->visibleTo($agent);
 
-    expect($agentReports->count())->toBeLessThan(11)
+    expect($agentReports->count())->toBeLessThan(13)
         ->and($agentReports->count())->toBeGreaterThan(0)
         ->and($agentReports->map(fn ($r) => $r->key()))->not->toContain('profit');
 });

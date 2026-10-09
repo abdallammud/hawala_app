@@ -63,7 +63,7 @@ class CancellationsReport extends Report
     public function rows(ReportFilters $filters, User $user): Collection
     {
         $cancelled = Transfer::query()
-            ->visibleTo($user)
+            ->reportableBy($user)
             ->with(['branch', 'cancelledBy'])
             ->whereIn('status', [TransferStatus::Cancelled, TransferStatus::Rejected])
             ->whereBetween('cancelled_at', [$filters->from, $filters->to])
@@ -88,6 +88,9 @@ class CancellationsReport extends Report
             ->get()
             // A payout agent shouldn't see expiries on transfers outside their scope.
             ->filter(fn (ClaimExpiry $e) => $e->transfer && $user->can('view', $e->transfer))
+            ->filter(fn (ClaimExpiry $e) => $user->can('transfers.view_all')
+                || $e->user_id === $user->id
+                || $e->transfer->sending_agent_id === $user->id)
             ->map(fn (ClaimExpiry $e) => [
                 'kind' => __('Claim timed out'),
                 'sort_at' => $e->expired_at,

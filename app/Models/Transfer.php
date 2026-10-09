@@ -14,8 +14,9 @@ use Illuminate\Support\Str;
 class Transfer extends Model
 {
     protected $fillable = [
-        'code', 'idempotency_key', 'sending_agent_id', 'branch_id', 'origin_branch_id',
-        'sender_name', 'sender_phone', 'receiver_name', 'receiver_phone',
+        'code', 'idempotency_key', 'sending_agent_id', 'customer_id', 'branch_id', 'origin_branch_id',
+        'sender_name', 'sender_phone', 'sender_country', 'sender_city', 'sender_province',
+        'receiver_name', 'receiver_phone', 'receiver_country', 'receiver_city', 'receiver_province',
         'receiver_account_type_id', 'receiver_account_number',
         'original_currency', 'quote_mode', 'original_amount_cents', 'market_rate', 'margin_bp', 'customer_rate',
         'amount_cents', 'fee_cents', 'fx_income_cents', 'total_debit_cents', 'collect_original_cents',
@@ -102,6 +103,11 @@ class Transfer extends Model
         return $this->hasMany(TransferCollection::class);
     }
 
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
     public function cancellationRequests(): HasMany
     {
         return $this->hasMany(CancellationRequest::class);
@@ -145,6 +151,28 @@ class Transfer extends Model
             // A user with neither scope sees nothing rather than everything.
             $q->orWhereRaw('1 = 0');
         });
+    }
+
+    /**
+     * Scope for reports. Managers with `transfers.view_all` see everything;
+     * agents (sending, payout, both) see only transfers they sent, claimed or
+     * paid — not the rest of their branch, which `visibleTo` allows for the
+     * payout queue. Other staff fall back to `visibleTo`.
+     */
+    public function scopeReportableBy(Builder $query, User $user): Builder
+    {
+        if ($user->can('transfers.view_all')) {
+            return $query;
+        }
+
+        if ($user->type->sends() || $user->type->pays()) {
+            return $query->where(fn (Builder $q) => $q
+                ->where('sending_agent_id', $user->id)
+                ->orWhere('claimed_by', $user->id)
+                ->orWhere('paid_by', $user->id));
+        }
+
+        return $query->visibleTo($user);
     }
 
     public static function largeThresholdCents(): int

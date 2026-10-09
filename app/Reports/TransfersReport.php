@@ -68,7 +68,7 @@ class TransfersReport extends Report
     public function rows(ReportFilters $filters, User $user): Collection
     {
         return Transfer::query()
-            ->visibleTo($user)
+            ->reportableBy($user)
             ->with(['sendingAgent', 'claimedBy', 'paidBy', 'branch'])
             ->whereBetween('created_at', [$filters->from, $filters->to])
             ->when($filters->branchId, fn ($q) => $q->where('branch_id', $filters->branchId))

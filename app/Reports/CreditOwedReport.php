@@ -54,6 +54,8 @@ class CreditOwedReport extends Report
         $accounts = LedgerAccount::query()
             ->where('type', LedgerAccountType::AgentCredit->value)
             ->whereNotNull('owner_id')
+            // Agents see their own credit, not everyone's.
+            ->when(! $user->can('balances.view_all'), fn ($q) => $q->where('owner_id', $user->id))
             ->with('owner')
             ->get();
 
@@ -61,6 +63,7 @@ class CreditOwedReport extends Report
             ->whereIn('kind', [BalanceRequestKind::TopupCredit, BalanceRequestKind::CreditRepayment])
             ->where('status', BalanceRequestStatus::Approved)
             ->whereBetween('decided_at', [$filters->from, $filters->to])
+            ->when(! $user->can('balances.view_all'), fn ($q) => $q->where('user_id', $user->id))
             ->get()
             ->groupBy('user_id');
 

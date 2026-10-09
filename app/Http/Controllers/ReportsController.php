@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\UserType;
 use App\Models\AccountType;
 use App\Models\Branch;
+use App\Models\Customer;
 use App\Models\User;
 use App\Reports\AgentStatementReport;
 use App\Reports\Report;
@@ -94,10 +95,19 @@ class ReportsController extends Controller
     {
         return [
             'branches' => Branch::query()->orderBy('name')->pluck('name', 'id'),
+            // Someone who can't see everyone's transfers gets only themselves
+            // in the list — the others' names aren't theirs to browse.
             'agents' => User::query()
                 ->whereIn('type', [UserType::SendingAgent, UserType::PayoutAgent, UserType::DualAgent, UserType::Staff])
+                ->when(! $user->can('transfers.view_all'), fn ($q) => $q->whereKey($user->id))
                 ->orderBy('name')
                 ->pluck('name', 'id'),
+            'customers' => Customer::query()
+                ->visibleTo($user)
+                ->orderBy('name')
+                ->limit(500)
+                ->get()
+                ->mapWithKeys(fn (Customer $c) => [$c->id => $c->name.' · '.$c->phoneLabel()]),
             'statuses' => TransfersReport::statusOptions(),
             'accountTypes' => AgentStatementReport::accountTypeOptions(),
             'payoutMethods' => AccountType::query()->orderBy('sort')->pluck('name', 'name'),
