@@ -46,6 +46,28 @@ class Customer extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * Who this customer sent to last time, so the New Transfer form can start
+     * with the receiver filled in. Only looks at transfers the user may see.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function lastReceiverFor(User $user): ?array
+    {
+        $last = $this->transfers()
+            ->reportableBy($user)
+            ->latest('id')
+            ->first([
+                'receiver_name', 'receiver_phone', 'receiver_country', 'receiver_city', 'receiver_province',
+                'receiver_account_type_id', 'receiver_account_number',
+            ]);
+
+        return $last?->only([
+            'receiver_name', 'receiver_phone', 'receiver_country', 'receiver_city', 'receiver_province',
+            'receiver_account_type_id', 'receiver_account_number',
+        ]);
+    }
+
     /** "Brussels, Brabant, Belgium" — whatever parts are known. */
     public function location(): string
     {

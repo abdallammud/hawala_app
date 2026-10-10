@@ -118,6 +118,7 @@
                         loading: false,
                         results: [],
                         picked: '',
+                        receiverFilled: false,
                         async search() {
                             this.picked = '';
                             if (this.q.trim().length < 2) { this.results = []; this.open = false; return; }
@@ -131,7 +132,7 @@
                             this.loading = false;
                         },
                         fill(name, value) {
-                            const el = this.$root.querySelector('[name=' + name + ']');
+                            const el = document.querySelector('[name=' + name + ']');
                             if (el) { el.value = value || ''; el.dispatchEvent(new Event('input', { bubbles: true })); }
                         },
                         pick(c) {
@@ -140,6 +141,15 @@
                             this.fill('sender_country', c.country);
                             this.fill('sender_city', c.city);
                             this.fill('sender_province', c.province);
+                            // Same receiver as last time, when there was one.
+                            if (c.receiver) {
+                                for (const field of ['name', 'phone', 'country', 'city', 'province']) {
+                                    this.fill('receiver_' + field, c.receiver['receiver_' + field]);
+                                }
+                                this.fill('receiver_account_type_id', c.receiver.receiver_account_type_id);
+                                this.fill('receiver_account_number', c.receiver.receiver_account_number);
+                                this.receiverFilled = true;
+                            }
                             this.picked = c.name + ' — ' + c.phone_display;
                             this.q = ''; this.results = []; this.open = false;
                         },
@@ -165,6 +175,7 @@
                             <p x-show="!loading && results.length === 0" class="px-4 py-3 text-sm text-slate-500">{{ __('No saved customer matches — fill in the details below to add a new one.') }}</p>
                         </div>
                         <p x-show="picked" x-cloak class="mt-1.5 text-xs text-emerald-700" x-text="'{{ __('Using saved customer') }}: ' + picked"></p>
+                        <p x-show="picked && receiverFilled" x-cloak class="mt-1 text-xs text-emerald-700">{{ __('Receiver filled in from their last transfer — check it before sending.') }}</p>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -182,11 +193,11 @@
                     <legend class="sr-only">{{ __('Receiver') }}</legend>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                        <x-input name="receiver_name" label="{{ __('Name') }}" />
-                        <x-input name="receiver_phone" label="{{ __('Phone') }}" />
-                        <x-searchable-select name="receiver_country" label="{{ __('Country') }}" :options="$countries" value="Somalia" />
-                        <x-input name="receiver_city" label="{{ __('City') }}" />
-                        <x-input name="receiver_province" label="{{ __('Province / region') }}" hint="{{ __('Optional') }}" />
+                        <x-input name="receiver_name" :value="$prefillReceiver['receiver_name'] ?? null" label="{{ __('Name') }}" />
+                        <x-input name="receiver_phone" :value="$prefillReceiver['receiver_phone'] ?? null" label="{{ __('Phone') }}" />
+                        <x-searchable-select name="receiver_country" label="{{ __('Country') }}" :options="$countries" :value="$prefillReceiver['receiver_country'] ?? 'Somalia'" />
+                        <x-input name="receiver_city" :value="$prefillReceiver['receiver_city'] ?? null" label="{{ __('City') }}" />
+                        <x-input name="receiver_province" :value="$prefillReceiver['receiver_province'] ?? null" label="{{ __('Province / region') }}" hint="{{ __('Optional') }}" />
                     </div>
                 </fieldset>
             </x-card>
@@ -270,8 +281,8 @@
 
             <x-card :title="__('Receiver prefers')" :subtitle="__('Optional — helps the payout agent.')">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <x-select name="receiver_account_type_id" label="{{ __('Account type') }}" :options="$accountTypes" placeholder="{{ __('Any') }}" />
-                    <x-input name="receiver_account_number" label="{{ __('Account number') }}" />
+                    <x-select name="receiver_account_type_id" :value="$prefillReceiver['receiver_account_type_id'] ?? null" label="{{ __('Account type') }}" :options="$accountTypes" placeholder="{{ __('Any') }}" />
+                    <x-input name="receiver_account_number" :value="$prefillReceiver['receiver_account_number'] ?? null" label="{{ __('Account number') }}" />
                 </div>
 
                 <div class="mt-5 space-y-3">

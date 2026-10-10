@@ -52,6 +52,7 @@ class CustomersController extends Controller
                 ->get()
                 ->map(fn (Customer $c) => [
                     'id' => $c->id,
+                    'receiver' => $c->lastReceiverFor($request->user()),
                     'name' => $c->name,
                     'phone_display' => $c->phoneLabel(),
                     'country' => $c->country,

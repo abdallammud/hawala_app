@@ -138,6 +138,29 @@ it('finds customers by name or by part of the phone number', function () {
     $this->actingAs($agent)->getJson('/customers/search?q=h')->assertOk()->assertJsonCount(0);
 });
 
+it('hands back the receiver from the customer’s last transfer', function () {
+    $agent = H::sendingAgent();
+    custSend($agent, ['sender_name' => 'Hodan Nur', 'sender_phone' => '+46 70 111 2222', 'receiver_name' => 'Old Receiver']);
+    custSend($agent, [
+        'sender_name' => 'Hodan Nur', 'sender_phone' => '+46 70 111 2222',
+        'receiver_name' => 'Fartun Ali', 'receiver_phone' => '+252 61 555 0000', 'receiver_city' => 'Hargeisa',
+    ]);
+
+    $this->actingAs($agent)->getJson('/customers/search?q=hodan')
+        ->assertOk()
+        ->assertJsonPath('0.receiver.receiver_name', 'Fartun Ali')
+        ->assertJsonPath('0.receiver.receiver_phone', '+252 61 555 0000')
+        ->assertJsonPath('0.receiver.receiver_city', 'Hargeisa');
+});
+
+it('opens the form with the last receiver filled in for a saved customer', function () {
+    $agent = H::sendingAgent();
+    $sent = custSend($agent, ['sender_name' => 'Hodan Nur', 'sender_phone' => '+4670111', 'receiver_name' => 'Fartun Ali']);
+
+    $this->actingAs($agent)->get('/transfers/create?customer='.$sent->customer_id)->assertOk()
+        ->assertSee('value="Fartun Ali"', false);
+});
+
 it('only searches the agent’s own customers, but an admin searches everyone’s', function () {
     $a = H::sendingAgent();
     $b = H::sendingAgent();

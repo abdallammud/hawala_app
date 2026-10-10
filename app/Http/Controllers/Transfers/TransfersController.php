@@ -103,6 +103,7 @@ class TransfersController extends Controller
             'payCurrency' => $currencies->has($lastCurrency) ? $lastCurrency : 'USD',
             'accountTypes' => AccountType::query()->where('is_active', true)->orderBy('sort')->pluck('name', 'id'),
             'prefill' => $prefill,
+            'prefillReceiver' => $prefill?->lastReceiverFor($request->user()) ?? [],
             'senderDefaults' => [
                 'country' => $lastSender?->sender_country,
                 'city' => $lastSender?->sender_city,
