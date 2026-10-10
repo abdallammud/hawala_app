@@ -42,21 +42,30 @@
                         <td class="px-4 py-3" data-label="{{ __('Status') }}">
                             <x-badge :color="$req->status->color()">{{ $req->status->label() }}</x-badge>
                         </td>
-                        <td class="px-4 py-3 text-right space-x-3" data-label="">
+                        <td class="px-4 py-3 text-right" data-label="">
                             @if ($req->status->value === 'pending' && auth()->user()->can('adjustments.approve') && auth()->id() !== $req->requested_by)
-                                <form method="POST" action="{{ route('adjustments.approve', $req) }}" class="inline">
-                                    @csrf
-                                    <button type="submit" class="text-brand-600 hover:text-brand-700 font-medium text-sm">{{ __('Approve') }}</button>
-                                </form>
-                                <button type="button" x-data x-on:click="$dispatch('open-modal', 'reject-{{ $req->id }}')" class="text-red-600 hover:text-red-700 font-medium text-sm">
-                                    {{ __('Reject') }}
-                                </button>
+                                <div class="flex flex-row flex-wrap items-center justify-end gap-4">
+                                    <form method="POST" action="{{ route('adjustments.approve', $req) }}">
+                                        @csrf
+                                        <x-button type="submit" size="sm">
+                                            <x-icon name="check-circle" class="w-4 h-4" />
+                                            {{ __('Approve') }}
+                                        </x-button>
+                                    </form>
+                                    <x-button type="button" size="sm" variant="danger" x-data x-on:click="$dispatch('open-modal', 'reject-{{ $req->id }}')">
+                                        <x-icon name="x-circle" class="w-4 h-4" />
+                                        {{ __('Reject') }}
+                                    </x-button>
+                                </div>
                                 <x-modal name="reject-{{ $req->id }}" title="{{ __('Reject adjustment') }}">
-                                    <form method="POST" action="{{ route('adjustments.reject', $req) }}" class="space-y-4">
+                                    <form method="POST" action="{{ route('adjustments.reject', $req) }}" class="space-y-4 text-left">
                                         @csrf
                                         <x-textarea name="reason" label="{{ __('Reason') }}" />
                                         <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
-                                            <x-button type="submit" variant="danger">{{ __('Reject adjustment') }}</x-button>
+                                            <x-button type="submit" variant="danger">
+                                                <x-icon name="x-circle" class="w-4 h-4" />
+                                                {{ __('Reject adjustment') }}
+                                            </x-button>
                                         </div>
                                     </form>
                                 </x-modal>

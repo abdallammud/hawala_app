@@ -44,7 +44,7 @@ class ProductionSeeder extends Seeder
         $this->defaultSettings();
     }
 
-    /** One each of the six system accounts (BUILD.md §2). */
+    /** One each of the system accounts (BUILD.md §2). */
     private function systemLedgerAccounts(): void
     {
         $ledger = app(LedgerService::class);
@@ -56,6 +56,7 @@ class ProductionSeeder extends Seeder
             LedgerAccountType::CommissionExpense,
             LedgerAccountType::BankCharges,
             LedgerAccountType::Adjustments,
+            LedgerAccountType::OpeningBalance,
         ] as $type) {
             $ledger->system($type);
         }

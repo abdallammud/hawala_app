@@ -32,11 +32,12 @@ describe('ProductionSeeder', function () {
 
         expect(Role::count())->toBe(5);
 
-        // The six system accounts, one each, with no owner.
+        // The system accounts, one each, with no owner.
         $systemTypes = [
             LedgerAccountType::TransfersPayable, LedgerAccountType::FeeIncome,
             LedgerAccountType::FxIncome, LedgerAccountType::CommissionExpense,
             LedgerAccountType::BankCharges, LedgerAccountType::Adjustments,
+            LedgerAccountType::OpeningBalance,
         ];
 
         foreach ($systemTypes as $type) {

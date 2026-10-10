@@ -40,7 +40,7 @@ $widths = [
             x-transition:leave="ease-in duration-150"
             x-transition:leave-start="opacity-100 translate-y-0"
             x-transition:leave-end="opacity-0 translate-y-4"
-            class="relative bg-white w-full {{ $widths[$maxWidth] ?? $widths['md'] }} rounded-t-xl sm:rounded-xl shadow-xl"
+            class="relative bg-white w-full text-left {{ $widths[$maxWidth] ?? $widths['md'] }} rounded-t-xl sm:rounded-xl shadow-xl"
         >
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <h3 class="text-sm font-semibold text-slate-900">{{ $title }}</h3>

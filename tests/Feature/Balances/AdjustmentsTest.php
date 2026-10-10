@@ -6,6 +6,8 @@ use App\Models\AdjustmentRequest;
 use App\Models\CompanyAccount;
 use App\Models\LedgerAccount;
 use App\Models\User;
+use App\Reports\ProfitReport;
+use App\Reports\ReportFilters;
 use App\Services\Balances\AdjustmentService;
 use App\Services\Ledger\LedgerService;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -120,4 +122,52 @@ it('lets a super-admin reject a pending adjustment with a reason', function () {
     expect($request->fresh()->status->value)->toBe('rejected')
         ->and($request->fresh()->decision_note)->toBe('Wrong accounts')
         ->and($companyLedger->fresh()->balance_cents)->toBe(0);
+});
+
+it('offers the opening balances account on the form', function () {
+    $admin = makeAdmin();
+    CompanyAccount::create(['name' => 'Europe office', 'location' => 'europe', 'is_active' => true]);
+
+    $this->actingAs($admin)->get('/adjustments/create?opening=1')
+        ->assertOk()
+        ->assertSee('Opening balances (system)');
+
+    $equity = LedgerAccount::query()->where('type', 'opening_balance')->firstOrFail();
+    expect($equity->normal_side->value)->toBe('credit');
+});
+
+it('books two opening balances without moving money between accounts or touching profit', function () {
+    $admin = makeAdmin();
+    $superAdmin = User::factory()->create();
+    $superAdmin->assignRole('super-admin');
+    [$ledger, $europeLedger] = ledgerAndCompany();
+    $mogadishu = CompanyAccount::create(['name' => 'Mogadishu bank', 'location' => 'somalia', 'is_active' => true]);
+    $mogadishuLedger = $ledger->accountFor($mogadishu, LedgerAccountType::Company);
+    $equity = $ledger->system(LedgerAccountType::OpeningBalance);
+
+    foreach ([[$europeLedger, '12000'], [$mogadishuLedger, '8000.50']] as [$account, $amount]) {
+        $this->actingAs($admin)->post('/adjustments', [
+            'debit_ledger_account_id' => $account->id,
+            'credit_ledger_account_id' => $equity->id,
+            'amount' => $amount,
+            'reason' => 'Opening balance',
+        ]);
+    }
+
+    foreach (AdjustmentRequest::query()->get() as $request) {
+        $this->actingAs($superAdmin)->post("/adjustments/{$request->id}/approve")->assertRedirect();
+    }
+
+    expect($europeLedger->fresh()->balance_cents)->toBe(1_200_000)
+        ->and($mogadishuLedger->fresh()->balance_cents)->toBe(800_050)
+        ->and($equity->fresh()->balance_cents)->toBe(2_000_050);
+
+    // Not a profit item: the profit report ignores the opening-balance account.
+    $report = app(ProfitReport::class)->rows(new ReportFilters(
+        from: now()->subDay()->toImmutable(),
+        to: now()->addDay()->toImmutable(),
+    ), $admin);
+
+    expect($report)->toBeEmpty();
+    $this->artisan('hawala:verify-ledger')->assertSuccessful();
 });

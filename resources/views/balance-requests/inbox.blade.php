@@ -47,13 +47,26 @@
                                         {{ __('Approve') }}
                                     </button>
                                     <x-modal name="approve-{{ $req->id }}" title="{{ __('Approve top-up') }}">
-                                        <form method="POST" action="{{ route('balance-requests.approve', $req) }}" class="space-y-4">
+                                        <form method="POST" action="{{ route('balance-requests.approve', $req) }}" class="space-y-5">
                                             @csrf
-                                            <x-alert type="warning">
-                                                {{ __('Has the money arrived in a company account? If not, reject this and ask the agent to request credit instead.') }}
-                                            </x-alert>
+                                            <div class="flex h-12 w-12 items-center justify-center rounded-full bg-amber-100">
+                                                <x-icon name="exclamation-triangle" class="w-7 h-7 text-amber-600" />
+                                            </div>
+                                            <div>
+                                                <p class="text-base font-semibold text-slate-900">{{ __('Has the money arrived?') }}</p>
+                                                <p class="mt-1.5 text-sm leading-relaxed text-slate-600">
+                                                    {{ __('Approve only if :amount from :name is already in a company account.', ['amount' => \App\Support\Money::format($req->amount_cents), 'name' => $req->user->name]) }}
+                                                    {{ __('If not, reject this and ask the agent to request credit instead.') }}
+                                                </p>
+                                            </div>
                                             <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
-                                                <x-button type="submit">{{ __('Yes, approve') }}</x-button>
+                                                <x-button type="button" variant="secondary" x-data x-on:click="$dispatch('close-modal', 'approve-{{ $req->id }}')">
+                                                    {{ __('Cancel') }}
+                                                </x-button>
+                                                <x-button type="submit">
+                                                    <x-icon name="check-circle" class="w-5 h-5" />
+                                                    {{ __('Yes, approve') }}
+                                                </x-button>
                                             </div>
                                         </form>
                                     </x-modal>

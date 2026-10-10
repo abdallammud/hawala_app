@@ -108,12 +108,6 @@
                 <p class="hidden sm:block text-xs text-brand-700 text-right">{{ __('Give this number to the customer.') }}</p>
             </div>
 
-            <datalist id="country-list">
-                @foreach ($countries as $country)
-                    <option value="{{ $country }}"></option>
-                @endforeach
-            </datalist>
-
             {{-- Sender: pick a saved customer to fill the boxes, or type a new one. --}}
             <x-card :title="__('Sender')" :subtitle="__('The person handing over the money.')">
                 <fieldset
@@ -176,7 +170,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <x-input name="sender_name" label="{{ __('Name') }}" :value="$prefill?->name" autofocus />
                         <x-input name="sender_phone" label="{{ __('Phone') }}" :value="$prefill?->phone" />
-                        <x-input name="sender_country" label="{{ __('Country') }}" list="country-list" :value="$prefill?->country ?? $senderDefaults['country']" />
+                        <x-searchable-select name="sender_country" label="{{ __('Country') }}" :options="$countries" :value="$prefill?->country ?? $senderDefaults['country']" />
                         <x-input name="sender_city" label="{{ __('City') }}" :value="$prefill?->city ?? $senderDefaults['city']" />
                         <x-input name="sender_province" label="{{ __('Province / region') }}" :value="$prefill?->province ?? $senderDefaults['province']" hint="{{ __('Optional') }}" />
                     </div>
@@ -190,7 +184,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <x-input name="receiver_name" label="{{ __('Name') }}" />
                         <x-input name="receiver_phone" label="{{ __('Phone') }}" />
-                        <x-input name="receiver_country" label="{{ __('Country') }}" list="country-list" value="Somalia" />
+                        <x-searchable-select name="receiver_country" label="{{ __('Country') }}" :options="$countries" value="Somalia" />
                         <x-input name="receiver_city" label="{{ __('City') }}" />
                         <x-input name="receiver_province" label="{{ __('Province / region') }}" hint="{{ __('Optional') }}" />
                     </div>

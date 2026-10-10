@@ -16,6 +16,7 @@ enum LedgerAccountType: string
     case BankCharges = 'bank_charges';
     case Adjustments = 'adjustments';
     case Expenses = 'expenses';
+    case OpeningBalance = 'opening_balance';
 
     /**
      * Natural side — BUILD.md §4. Determines how a signed journal line
@@ -28,7 +29,7 @@ enum LedgerAccountType: string
             self::CommissionExpense, self::BankCharges, self::Adjustments, self::Expenses => NormalSide::Debit,
 
             self::AgentSend, self::AgentCommission, self::TransfersPayable,
-            self::FeeIncome, self::FxIncome => NormalSide::Credit,
+            self::FeeIncome, self::FxIncome, self::OpeningBalance => NormalSide::Credit,
         };
     }
 
@@ -59,6 +60,7 @@ enum LedgerAccountType: string
             self::BankCharges => __('Bank charges'),
             self::Adjustments => __('Adjustments'),
             self::Expenses => __('Operating expenses'),
+            self::OpeningBalance => __('Opening balances'),
         };
     }
 }

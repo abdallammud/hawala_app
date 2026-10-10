@@ -56,9 +56,9 @@
                                         <tr>
                                             <td class="px-3 py-2 font-medium text-slate-700">{{ $field }}</td>
                                             <td class="px-3 py-2 text-slate-500">
-                                                {{ \Illuminate\Support\Arr::get($activity->properties, "old.{$field}") ?? '—' }}
+                                                {{ \App\Support\AuditValue::format($activity, $field, \Illuminate\Support\Arr::get($activity->properties, "old.{$field}"), 'old') }}
                                             </td>
-                                            <td class="px-3 py-2 text-slate-900">{{ is_scalar($after) ? $after : json_encode($after) }}</td>
+                                            <td class="px-3 py-2 text-slate-900">{{ \App\Support\AuditValue::format($activity, $field, $after, 'attributes') }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>

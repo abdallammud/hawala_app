@@ -5,7 +5,7 @@
                 @csrf
 
                 <x-select name="debit_ledger_account_id" label="{{ __('Debit account') }}" :options="$accounts" placeholder="{{ __('Select an account') }}" hint="{{ __('This account will increase.') }}" />
-                <x-select name="credit_ledger_account_id" label="{{ __('Credit account') }}" :options="$accounts" placeholder="{{ __('Select an account') }}" hint="{{ __('This account will decrease.') }}" />
+                <x-select name="credit_ledger_account_id" label="{{ __('Credit account') }}" :options="$accounts" placeholder="{{ __('Select an account') }}" hint="{{ __('This account will decrease. For an opening balance, choose Opening balances (system).') }}" />
                 <x-input name="amount" label="{{ __('Amount ($)') }}" type="number" min="0.01" step="0.01" prefix="$" />
                 <x-textarea name="reason" label="{{ __('Reason') }}" hint="{{ __('Required — shown to the approver and kept on the record.') }}" />
 

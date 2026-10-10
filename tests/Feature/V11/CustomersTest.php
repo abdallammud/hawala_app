@@ -109,7 +109,7 @@ it('shows separate Sender and Receiver fieldsets with a customer search', functi
         ->assertSee('Find an existing customer')
         ->assertSee('name="sender_country"', false)->assertSee('name="sender_province"', false)
         ->assertSee('name="receiver_country"', false)->assertSee('name="receiver_province"', false)
-        ->assertSee('value="Somalia"', false);
+        ->assertSee("value: 'Somalia'", false);
 });
 
 it('prefills the form from a customer', function () {
