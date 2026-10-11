@@ -135,6 +135,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/transfers/{transfer}', [TransfersController::class, 'show'])->name('transfers.show');
     Route::get('/transfers/{transfer}/receipt', [TransfersController::class, 'receipt'])->name('transfers.receipt');
+    Route::get('/transfers/{transfer}/print', [TransfersController::class, 'print'])->name('transfers.print');
     Route::post('/transfers/{transfer}/cancel', [TransfersController::class, 'cancel'])->name('transfers.cancel');
     Route::post('/transfers/{transfer}/request-cancel', [TransfersController::class, 'requestCancel'])->name('transfers.request-cancel');
     Route::post('/transfers/{transfer}/approve-large', [TransfersController::class, 'approveLarge'])->name('transfers.approve-large');
@@ -271,6 +272,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/reports', [ReportsController::class, 'index'])->name('reports.index');
     Route::get('/reports/{report}', [ReportsController::class, 'show'])->name('reports.show');
     Route::get('/reports/{report}/export', [ReportsController::class, 'export'])->name('reports.export');
+    Route::get('/reports/{report}/print', [ReportsController::class, 'print'])->name('reports.print');
+    Route::get('/reports/{report}/pdf', [ReportsController::class, 'pdf'])->name('reports.pdf');
 
     // --- Audit log -----------------------------------------------------------
     Route::get('/audit-log', [AuditLogController::class, 'index'])

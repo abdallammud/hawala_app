@@ -5,25 +5,39 @@
 @endphp
 
 <x-layouts.app :title="$report->title()">
-    <a href="{{ route('reports.index') }}" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-2">
+    <a href="{{ route('reports.index') }}" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-700 mb-2 print:hidden">
         <x-icon name="chevron-right" class="w-4 h-4 rotate-180" />
         {{ __('Reports') }}
     </a>
 
+    @error('pdf')
+        <x-alert type="error">{{ $message }}</x-alert>
+    @enderror
+
     <x-card :padding="false">
-        <div class="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-4">
+        <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h2 class="text-sm font-semibold text-slate-900">{{ $report->title() }}</h2>
                 <p class="text-xs text-slate-500 mt-0.5">{{ $report->description() }}</p>
             </div>
-            <x-button
-                :href="route('reports.export', array_merge([$report->key()], $filters->toQueryString()))"
-                variant="secondary" size="sm">
-                {{ __('Export CSV') }}
-            </x-button>
+            <div class="flex flex-wrap gap-2 print:hidden">
+                <x-button :href="route('reports.print', array_merge([$report->key()], $filters->toQueryString()))" target="_blank" rel="noopener" variant="secondary" size="sm">
+                    <x-icon name="printer" class="w-4 h-4" />
+                    {{ __('Print') }}
+                </x-button>
+                <x-button :href="route('reports.pdf', array_merge([$report->key()], $filters->toQueryString()))" variant="secondary" size="sm">
+                    <x-icon name="document-text" class="w-4 h-4" />
+                    {{ __('Download PDF') }}
+                </x-button>
+                <x-button
+                    :href="route('reports.export', array_merge([$report->key()], $filters->toQueryString()))"
+                    variant="secondary" size="sm">
+                    {{ __('Export CSV') }}
+                </x-button>
+            </div>
         </div>
 
-        <div class="p-5 border-b border-slate-100">
+        <div class="p-5 border-b border-slate-100 print:hidden">
             <form method="GET" class="flex flex-wrap gap-3 items-end">
                 @if (in_array('from', $available))
                     <div class="w-full sm:w-40">
@@ -57,7 +71,12 @@
                 @endif
                 @if (in_array('status', $available))
                     <div class="w-full sm:w-44">
-                        <x-select name="status" label="{{ __('Status') }}" :options="$options['statuses']" placeholder="{{ __('All statuses') }}" :value="$filters->status" />
+                        @if ($report->defaultStatus() !== null)
+                            {{-- This report starts on one status, so "all" is a real choice, not a blank. --}}
+                            <x-select name="status" label="{{ __('Status') }}" :options="$report->statusChoices()" :value="$filters->status ?? $report->defaultStatus()" />
+                        @else
+                            <x-select name="status" label="{{ __('Status') }}" :options="$report->statusChoices() ?? $options['statuses']" placeholder="{{ __('All statuses') }}" :value="$filters->status" />
+                        @endif
                     </div>
                 @endif
                 @if (in_array('account_type', $available))
@@ -119,7 +138,7 @@
                                                 {{ $totals[$key] }}
                                             @endif
                                         @elseif ($loop->first)
-                                            {{ __('Total') }}
+                                            {{ $totalLabel }}
                                         @endif
                                     </td>
                                 @endforeach
@@ -127,6 +146,17 @@
                         </tfoot>
                     @endif
                 </table>
+
+                @if (! empty($summary))
+                    <dl class="px-4 py-3 border-t border-slate-100 flex flex-wrap justify-end gap-x-6 gap-y-1 text-sm">
+                        @foreach ($summary as [$label, $cents])
+                            <div>
+                                <dt class="inline text-slate-500 mr-1">{{ $label }}</dt>
+                                <dd class="inline font-mono tabular-nums font-medium text-slate-900"><x-money :cents="$cents" /></dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                @endif
             </div>
 
             <div class="px-5 py-3 text-xs text-slate-500 border-t border-slate-100">

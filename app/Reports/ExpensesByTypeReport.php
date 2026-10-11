@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 
 /**
- * Where the money went: one line per expense type.
+ * Where the money went: one line per expense category, for the chosen status (approved by default).
  */
 class ExpensesByTypeReport extends Report
 {
@@ -18,7 +18,7 @@ class ExpensesByTypeReport extends Report
 
     public function title(): string
     {
-        return __('Expenses by type');
+        return __('Expenses by category');
     }
 
     public function description(): string
@@ -33,13 +33,23 @@ class ExpensesByTypeReport extends Report
 
     public function availableFilters(): array
     {
-        return ['from', 'to', 'branch'];
+        return ['from', 'to', 'branch', 'status'];
+    }
+
+    public function statusChoices(): array
+    {
+        return app(ExpensesReport::class)->statusChoices();
+    }
+
+    public function defaultStatus(): string
+    {
+        return app(ExpensesReport::class)->defaultStatus();
     }
 
     public function columns(): array
     {
         return [
-            'type' => __('Type'),
+            'type' => __('Category'),
             'count' => __('Expenses'),
             'amount' => __('Total (USD)'),
             'share' => __('Share'),
@@ -59,7 +69,7 @@ class ExpensesByTypeReport extends Report
     public function rows(ReportFilters $filters, User $user): Collection
     {
         $expenses = app(ExpensesReport::class)
-            ->query(new ReportFilters($filters->from, $filters->to, branchId: $filters->branchId), $user)
+            ->query(new ReportFilters($filters->from, $filters->to, branchId: $filters->branchId, status: $filters->status), $user)
             ->with('type')
             ->get();
 

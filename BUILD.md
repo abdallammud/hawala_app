@@ -888,6 +888,18 @@ destination branch; extra email events = expense approval, cancelled, top-up app
       shown switched off — return to pending first; ledger rows stay, per money rule 5)
 - [x] Optional attachment (PDF/JPG/PNG ≤ 5 MB) on private storage, served only to people who may view the expense
 - [x] Voucher numbers `EX-0001…` (shared `number_sequences`); in-app notifications to approvers and to the creator
-- [ ] Expenses report with status / category / branch / date, Print and PDF → phase 3
-### v1.2 phase 3 — Report print / PDF, transfer print icon, expenses report (pending)
+- [x] Expenses report with status / category / branch / date, Print and PDF (done in phase 3)
+### v1.2 phase 3 — Report print / PDF, transfer print icon, expenses report
+- [x] Every report page has **Print** (clean page in a new tab, opens the print dialog) and **Download PDF**, next to
+      Export CSV; one shared template `reports/document.blade.php` for all reports (`ReportsController::print|pdf`)
+- [x] Header on every page (inside `<thead>`): logo, company, report title, filters used in words, generated date
+      (company timezone) and who generated it, plus column headings; page numbers (PDF: drawn after layout;
+      browser: `@page` margin boxes, Chrome/Edge only). Print stylesheet hides sidebar, top bar and buttons
+      (`print:hidden`). Wide reports (> 6 columns) are landscape; PDFs are capped by `hawala.reports.pdf_max_rows` (2,000)
+      and by PHP's memory_limit (dompdf ≈ 60 MB + 0.25 MB per row; ~580 rows on a 256 MB host) — over that the page
+      points to Print (save as PDF from the browser) or CSV
+- [x] Expenses and Expenses by category: status filter (default Approved; Pending, Rejected, All), category, branch,
+      date range; a Status column; totals count only approved when statuses are mixed, with a per-status summary
+- [x] Transfer page: Print icon (opens the receipt PDF inline) shown even when `receipts.enabled` is off; receipts
+      keep their existing PDF with the new logo and HW number
 ### v1.2 phase 4 — Email notifications (pending)

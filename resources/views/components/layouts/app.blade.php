@@ -39,7 +39,7 @@
         <aside
             x-cloak
             :class="drawerOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-            class="fixed inset-y-0 left-0 z-50 w-72 bg-brand-900 flex flex-col transition-transform duration-200 lg:translate-x-0"
+            class="fixed inset-y-0 left-0 z-50 w-72 bg-brand-900 flex flex-col transition-transform duration-200 lg:translate-x-0 print:hidden"
         >
             <div class="h-16 flex items-center gap-3 px-5 border-b border-brand-800 shrink-0">
                 <img src="{{ asset('images/logo-mark.png') }}" alt="{{ config('app.name') }}" class="h-9 w-9 rounded-full bg-white p-0.5 shrink-0">
@@ -68,7 +68,7 @@
         </aside>
 
         {{-- Main column --}}
-        <div class="lg:pl-72 flex flex-col min-h-full">
+        <div class="lg:pl-72 print:pl-0 flex flex-col min-h-full">
 
             {{-- Send balance is the number a sending agent needs on every screen,
                  so it sits in the topbar rather than only on the dashboard: a
@@ -84,7 +84,7 @@
             @endphp
 
             {{-- Topbar --}}
-            <div class="sticky top-0 z-30">
+            <div class="sticky top-0 z-30 print:hidden">
             <header class="h-16 bg-white border-b border-slate-200 flex items-center gap-3 sm:gap-4 px-4 sm:px-6">
                 <button type="button" x-on:click="drawerOpen = true" class="text-slate-500 hover:text-slate-700 lg:hidden shrink-0">
                     <x-icon name="bars-3" class="w-6 h-6" />

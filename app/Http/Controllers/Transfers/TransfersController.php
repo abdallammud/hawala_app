@@ -207,6 +207,18 @@ class TransfersController extends Controller
         return $this->receipts->pdf($transfer)->download($this->receipts->filename($transfer));
     }
 
+    /**
+     * The same receipt, opened in the browser so it can be printed. Unlike the
+     * download and WhatsApp buttons it is not behind receipts.enabled: every
+     * transfer can be printed from its page.
+     */
+    public function print(Transfer $transfer): Response
+    {
+        $this->authorize('view', $transfer);
+
+        return $this->receipts->pdf($transfer)->stream($this->receipts->filename($transfer));
+    }
+
     public function cancel(Request $request, Transfer $transfer): RedirectResponse
     {
         $this->authorize('cancel', $transfer);

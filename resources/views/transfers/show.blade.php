@@ -26,9 +26,17 @@
                             {{ __('Created :when by :agent', ['when' => $transfer->created_at->format('M j, Y H:i'), 'agent' => $transfer->sendingAgent->name]) }}
                         </p>
                     </div>
-                    <div class="text-right shrink-0">
-                        <p class="text-2xl font-semibold text-slate-900 font-mono">{{ \App\Support\Money::format($transfer->amount_cents) }}</p>
-                        <p class="text-xs text-slate-500">{{ __('to :branch', ['branch' => $transfer->branch->name]) }}</p>
+                    <div class="flex items-start gap-3 shrink-0">
+                        <div class="text-right">
+                            <p class="text-2xl font-semibold text-slate-900 font-mono">{{ \App\Support\Money::format($transfer->amount_cents) }}</p>
+                            <p class="text-xs text-slate-500">{{ __('to :branch', ['branch' => $transfer->branch->name]) }}</p>
+                        </div>
+                        {{-- Always there, whatever the receipt switch says. --}}
+                        <a href="{{ route('transfers.print', $transfer) }}" target="_blank" rel="noopener"
+                           title="{{ __('Print receipt') }}" aria-label="{{ __('Print receipt') }}"
+                           class="p-2.5 rounded-lg border border-slate-300 text-slate-600 hover:text-brand-700 hover:bg-slate-50 print:hidden">
+                            <x-icon name="printer" class="w-5 h-5" />
+                        </a>
                     </div>
                 </div>
 

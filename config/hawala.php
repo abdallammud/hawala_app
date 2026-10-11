@@ -52,6 +52,12 @@ return [
         'lock_pay_currency' => true,
     ],
 
+    'reports' => [
+        // dompdf builds the whole file in memory (about 0.25 MB a row), so the
+        // real limit also follows PHP's memory_limit; bigger reports use Print or CSV.
+        'pdf_max_rows' => 2000,
+    ],
+
     'receipts' => [
         'enabled' => true,
     ],
