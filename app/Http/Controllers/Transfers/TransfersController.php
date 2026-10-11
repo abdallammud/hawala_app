@@ -93,14 +93,15 @@ class TransfersController extends Controller
             ->latest('id')
             ->first(['sender_country', 'sender_city', 'sender_province']);
 
-        // Keep the token (and so the tracking number) across a failed submit.
+        // Keep the token across a failed submit.
         $idempotencyKey = $request->old('idempotency_key') ?: (string) Str::uuid();
 
         return view('transfers.create', [
             'branches' => $branches->pluck('name', 'id'),
             'onlyBranchId' => $branches->count() === 1 ? $branches->first()->id : null,
             'currencies' => $currencies,
-            'payCurrency' => $currencies->has($lastCurrency) ? $lastCurrency : 'USD',
+            'payCurrency' => ! Transfer::payCurrencyLocked() && $currencies->has($lastCurrency) ? $lastCurrency : 'USD',
+            'payCurrencyLocked' => Transfer::payCurrencyLocked(),
             'accountTypes' => AccountType::query()->where('is_active', true)->orderBy('sort')->pluck('name', 'id'),
             'prefill' => $prefill,
             'prefillReceiver' => $prefill?->lastReceiverFor($request->user()) ?? [],
@@ -111,7 +112,6 @@ class TransfersController extends Controller
             ],
             'countries' => config('hawala.countries'),
             'idempotencyKey' => $idempotencyKey,
-            'trackingNumber' => $this->transfers->reserveTrackingCode($idempotencyKey),
         ]);
     }
 

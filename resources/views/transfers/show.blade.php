@@ -129,7 +129,7 @@
                         <dd class="font-mono text-slate-900">{{ number_format($transfer->collect_original_cents / 100, 2) }} {{ $transfer->original_currency }}</dd>
                     </div>
                     <div class="flex justify-between py-2.5 font-medium">
-                        <dt class="text-slate-700">{{ __('Taken from send balance') }}</dt>
+                        <dt class="text-slate-700">{{ __('Taken from agent balance') }}</dt>
                         <dd class="font-mono text-slate-900"><x-money :cents="$transfer->total_debit_cents" /></dd>
                     </div>
                 </dl>

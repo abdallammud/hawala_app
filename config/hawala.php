@@ -46,6 +46,12 @@ return [
         'hormuud' => ['username' => '', 'password' => '', 'sender_id' => '', 'api_url' => ''],
     ],
 
+    'transfers' => [
+        // Customers always pay in USD: the "Customer pays" box is calculated
+        // from "Receiver gets" and its currency cannot be changed.
+        'lock_pay_currency' => true,
+    ],
+
     'receipts' => [
         'enabled' => true,
     ],

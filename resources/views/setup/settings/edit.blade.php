@@ -35,6 +35,9 @@
                 <x-input name="currency_margin_bp" label="{{ __('FX margin (basis points)') }}" type="number" min="0" max="5000" :value="$settings['currency']['margin_bp']" hint="{{ __('500 = 5% margin on non-USD transfers.') }}" />
                 <x-input name="currency_max_rate_age_hours" label="{{ __('Max rate age (hours)') }}" type="number" min="1" :value="$settings['currency']['max_rate_age_hours']" hint="{{ __('Older rates block non-USD transfers unless a manual rate is set.') }}" />
             </div>
+            <div class="mt-5">
+                <x-checkbox name="transfers_lock_pay_currency" label="{{ __('Customers always pay in USD (Customer pays is calculated and locked)') }}" :checked="$settings['transfers']['lock_pay_currency']" />
+            </div>
         </x-card>
 
         <x-card :title="__('Payout')">

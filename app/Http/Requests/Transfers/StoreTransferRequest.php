@@ -15,6 +15,18 @@ class StoreTransferRequest extends FormRequest
         return $this->user()->can('create', Transfer::class);
     }
 
+    /**
+     * With the pay currency locked, "Customer pays" is always USD and always
+     * the calculated side: whatever the browser sent, the agent's typed
+     * amount is the receiver's. Enforced here, not just in the form.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (Transfer::payCurrencyLocked()) {
+            $this->merge(['currency' => 'USD', 'mode' => QuoteMode::Receive->value]);
+        }
+    }
+
     public function rules(): array
     {
         return [

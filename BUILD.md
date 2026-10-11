@@ -851,3 +851,26 @@ Tracking number = the automatic transfer code. 2FA = authenticator app (TOTP), s
 - [x] 2 Idle logout (`security.idle_timeout_minutes`, default 15, 0 = off, never above the session lifetime):
       server-side check plus a page timer with a 60-second "Stay signed in" warning; typing counts as activity
 - Do not change `APP_KEY` on a live system — it encrypts the 2FA secrets (see DEPLOY.md)
+
+---
+
+## 19. v1.2 (customer feedback, Oct 2026)
+
+Decisions (approved): customers pay in USD only; transfer numbers are `HW-0001…` (old random codes stay);
+expenses post to the ledger **at approval**, not at creation; emails go to every active payout agent in the
+destination branch; extra email events = expense approval, cancelled, top-up approved, claim expired, large transfer.
+
+### v1.2 phase 1 — Label, logo, USD lock, HW numbers
+- [x] "Taken from your send balance" → "Taken from your agent balance" (New Transfer; the transfer page's
+      "Taken from send balance" line too). Other "Send balance" wording is unchanged
+- [x] New logo (`correct logo.jpeg`) replaces every file in `public/images` + `favicon.ico`; same filenames
+      so sidebar, login, receipts (and later reports and emails) pick it up. Unused `logo-wide.png` removed
+- [x] Customer pays is read-only and fixed to USD (setting `transfers.lock_pay_currency`, default on); the
+      server forces `currency=USD` and receive mode on the store and quote endpoints
+- [x] Tracking number is `HW-0001`, `HW-0002`, … (4 digits minimum, then grows) from a locked
+      `number_sequences` counter inside the create transaction: no duplicates, no gaps on failed saves.
+      The New Transfer form says "Assigned when you send" (no number is reserved up front)
+
+### v1.2 phase 2 — Expense approval (pending)
+### v1.2 phase 3 — Report print / PDF, transfer print icon, expenses report (pending)
+### v1.2 phase 4 — Email notifications (pending)

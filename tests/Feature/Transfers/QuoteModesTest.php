@@ -16,6 +16,7 @@ beforeEach(function () {
     Notification::fake();
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->branch = H::seedReferenceData();
+    Settings::set('transfers.lock_pay_currency', false); // these cover paying in other currencies
     Settings::set('currency.margin_bp', 100); // EUR at 1.08 → customer rate 1.0692
 });
 

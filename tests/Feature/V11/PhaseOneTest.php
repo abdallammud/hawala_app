@@ -40,47 +40,6 @@ function v11PaidTransfer(Branch $branch): array
 
 // --- Item 7: tracking number ---------------------------------------------
 
-it('shows the tracking number on the form and gives the transfer that same number', function () {
-    $agent = H::sendingAgent(fundCents: 100000);
-    $key = (string) Str::uuid();
-    $service = app(TransferService::class);
-
-    $code = $service->reserveTrackingCode($key);
-
-    $this->actingAs($agent)
-        ->withSession(['_old_input' => ['idempotency_key' => $key]])
-        ->get('/transfers/create')
-        ->assertOk()
-        ->assertSee('Tracking number')
-        ->assertSee($code);
-
-    $transfer = $service->create($agent, $this->branch, H::transferPayload(), $key);
-
-    expect($transfer->code)->toBe($code);
-});
-
-it('keeps the same tracking number for the same form token only', function () {
-    $service = app(TransferService::class);
-    $key = (string) Str::uuid();
-
-    expect($service->reserveTrackingCode($key))->toBe($service->reserveTrackingCode($key))
-        ->and($service->reserveTrackingCode((string) Str::uuid()))->not->toBe($service->reserveTrackingCode($key));
-});
-
-it('falls back to a fresh code if the reserved one was taken meanwhile', function () {
-    $agent = H::sendingAgent(fundCents: 100000);
-    $service = app(TransferService::class);
-    $key = (string) Str::uuid();
-
-    $code = $service->reserveTrackingCode($key);
-    $first = $service->create($agent, $this->branch, H::transferPayload(), (string) Str::uuid());
-    Transfer::query()->whereKey($first->id)->update(['code' => $code]);
-
-    $second = $service->create($agent, $this->branch, H::transferPayload(), $key);
-
-    expect($second->code)->not->toBe($code)->and($second->code)->toStartWith('HW-');
-});
-
 // --- Item 10: branches ---------------------------------------------------
 
 it('stamps the sending agent’s own branch on the transfer', function () {

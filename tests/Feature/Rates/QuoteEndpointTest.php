@@ -9,6 +9,8 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
+    // These cover quoting in other currencies, which the USD lock switches off.
+    Settings::set('transfers.lock_pay_currency', false);
 
     FeeTier::create(['from_cents' => 0, 'to_cents' => 100000, 'rate_bp' => 500, 'flat_cents' => 0, 'cap_cents' => 2500, 'sort' => 0]);
     FeeTier::create(['from_cents' => 100000, 'to_cents' => null, 'rate_bp' => 200, 'flat_cents' => 0, 'cap_cents' => null, 'sort' => 1]);

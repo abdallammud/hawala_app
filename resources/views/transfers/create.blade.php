@@ -24,11 +24,12 @@
                    real one; the other fills itself from the rates. `mode`
                    just records which, so the server recalculates the same
                    leg the agent meant. */
-                mode: '{{ old('mode', 'receive') }}',
+                payLocked: {{ $payCurrencyLocked ? 'true' : 'false' }},
+                mode: '{{ $payCurrencyLocked ? 'receive' : old('mode', 'receive') }}',
                 payoutAmount: '{{ old('payout_amount') }}',
                 payoutCurrency: '{{ old('payout_currency', 'USD') }}',
                 payAmount: '{{ old('pay_amount') }}',
-                payCurrency: '{{ old('currency', $payCurrency) }}',
+                payCurrency: '{{ $payCurrencyLocked ? 'USD' : old('currency', $payCurrency) }}',
                 quote: null,
                 quoteError: null,
                 loading: false,
@@ -103,9 +104,9 @@
             <div class="rounded-xl border border-brand-200 bg-brand-50 px-5 py-4 flex items-center justify-between gap-4">
                 <div class="min-w-0">
                     <p class="text-xs font-semibold uppercase tracking-wide text-brand-700">{{ __('Tracking number') }}</p>
-                    <p class="mt-1 font-mono text-2xl font-bold tracking-wider text-brand-900">{{ $trackingNumber }}</p>
+                    <p class="mt-1 text-lg font-semibold text-brand-900">{{ __('Assigned when you send') }}</p>
                 </div>
-                <p class="hidden sm:block text-xs text-brand-700 text-right">{{ __('Give this number to the customer.') }}</p>
+                <p class="hidden sm:block text-xs text-brand-700 text-right">{{ __('Give it to the customer once the transfer is sent.') }}</p>
             </div>
 
             {{-- Sender: pick a saved customer to fill the boxes, or type a new one. --}}
@@ -237,11 +238,16 @@
                         amount-model="payAmount"
                         currency-model="payCurrency"
                         typed-mode="pay"
+                        :locked="$payCurrencyLocked"
                     />
                 </div>
 
                 <p class="mt-3 text-xs text-slate-500">
-                    {{ __('Type in either box — the other one fills itself from today\'s rate.') }}
+                    @if ($payCurrencyLocked)
+                        {{ __('Type what the receiver gets — what the customer pays (in USD) is worked out for you.') }}
+                    @else
+                        {{ __('Type in either box — the other one fills itself from today\'s rate.') }}
+                    @endif
                 </p>
 
                 <div class="mt-5" x-show="loading" x-cloak>
@@ -272,7 +278,7 @@
                             </span>
                         </div>
                         <div class="flex justify-between px-4 py-3">
-                            <span class="text-sm text-slate-500">{{ __('Taken from your send balance') }}</span>
+                            <span class="text-sm text-slate-500">{{ __('Taken from your agent balance') }}</span>
                             <span class="text-sm font-medium text-slate-900 font-mono" x-text="money(quote.total_debit_cents)"></span>
                         </div>
                     </div>

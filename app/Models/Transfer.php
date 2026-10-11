@@ -4,12 +4,12 @@ namespace App\Models;
 
 use App\Enums\QuoteMode;
 use App\Enums\TransferStatus;
+use App\Support\NumberSequence;
 use App\Support\Settings;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 
 class Transfer extends Model
 {
@@ -48,14 +48,28 @@ class Transfer extends Model
         ];
     }
 
-    /** Short, unambiguous, human-readable — no vowels, so no accidental words. */
-    public static function generateCode(): string
+    public const SEQUENCE = 'transfer';
+
+    public const CODE_PREFIX = 'HW';
+
+    /**
+     * The next tracking number: HW-0001, HW-0002, … Must be called inside the
+     * transaction that creates the transfer (see NumberSequence). Codes made
+     * before numbering existed are random; the loop only guards a freak clash.
+     */
+    public static function nextCode(): string
     {
         do {
-            $code = 'HW-'.Str::upper(Str::random(5));
+            $code = NumberSequence::format(self::CODE_PREFIX, NumberSequence::next(self::SEQUENCE));
         } while (static::query()->where('code', $code)->exists());
 
         return $code;
+    }
+
+    /** Customers always pay in USD; "Customer pays" is calculated, not typed. */
+    public static function payCurrencyLocked(): bool
+    {
+        return (bool) Settings::get('transfers.lock_pay_currency', true);
     }
 
     public function sendingAgent(): BelongsTo

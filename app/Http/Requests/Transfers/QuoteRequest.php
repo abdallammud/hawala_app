@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Transfers;
 
 use App\Enums\QuoteMode;
+use App\Models\Transfer;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -11,6 +12,13 @@ class QuoteRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()->can('transfers.create');
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (Transfer::payCurrencyLocked()) {
+            $this->merge(['currency' => 'USD', 'mode' => QuoteMode::Receive->value]);
+        }
     }
 
     public function rules(): array

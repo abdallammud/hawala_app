@@ -61,6 +61,7 @@ class SettingsController extends Controller
 
             'currency_margin_bp' => ['required', 'integer', 'min:0', 'max:5000'],
             'currency_max_rate_age_hours' => ['required', 'integer', 'min:1'],
+            'transfers_lock_pay_currency' => ['boolean'],
 
             'payout_claim_minutes' => ['required', 'integer', 'min:1'],
             'payout_allow_negative' => ['boolean'],
@@ -110,6 +111,7 @@ class SettingsController extends Controller
 
         Settings::set('currency.margin_bp', (int) $validated['currency_margin_bp'], $updatedBy);
         Settings::set('currency.max_rate_age_hours', (int) $validated['currency_max_rate_age_hours'], $updatedBy);
+        Settings::set('transfers.lock_pay_currency', $request->boolean('transfers_lock_pay_currency'), $updatedBy);
 
         Settings::set('payout.claim_minutes', (int) $validated['payout_claim_minutes'], $updatedBy);
         Settings::set('payout.allow_negative', $request->boolean('payout_allow_negative'), $updatedBy);
