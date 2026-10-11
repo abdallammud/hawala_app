@@ -58,6 +58,18 @@ return [
         'pdf_max_rows' => 2000,
     ],
 
+    'email' => [
+        // Nothing is sent until an admin switches this on and the account below works.
+        'enabled' => false,
+        // Gmail with an app password: smtp.gmail.com, 587 (STARTTLS) or 465 (SSL).
+        'host' => 'smtp.gmail.com',
+        'port' => 587,
+        'username' => '', // the Gmail address; also the From address
+        'password' => '', // the app password, stored encrypted
+        'from_name' => '', // blank = the company name
+        'reply_to' => '',
+    ],
+
     'receipts' => [
         'enabled' => true,
     ],

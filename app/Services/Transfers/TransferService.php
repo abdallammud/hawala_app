@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Notifications\LargeTransferCreated;
 use App\Services\CommissionCalculator;
 use App\Services\Customers\CustomerService;
+use App\Services\Email\EmailNotifier;
 use App\Services\Ledger\LedgerService;
 use App\Services\Rates\QuoteService;
 use App\Support\Settings;
@@ -135,6 +136,7 @@ class TransferService
                 ->each(fn (User $admin) => $admin->notify(new LargeTransferCreated($transfer)));
 
             SendTemplatedSms::dispatch(SmsEvent::LargeTransfer, $transfer->id);
+            app(EmailNotifier::class)->largeTransfer($transfer);
         }
 
         // Dispatched after the transaction commits, so the job never reads a
@@ -143,6 +145,7 @@ class TransferService
         // must not tell the receiver their money has been sent.
         if ($transfer->status === TransferStatus::Queued) {
             SendTemplatedSms::dispatch(SmsEvent::TransferSent, $transfer->id);
+            app(EmailNotifier::class)->transferSent($transfer);
         }
 
         return $transfer;

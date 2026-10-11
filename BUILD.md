@@ -902,4 +902,21 @@ destination branch; extra email events = expense approval, cancelled, top-up app
       date range; a Status column; totals count only approved when statuses are mixed, with a per-status summary
 - [x] Transfer page: Print icon (opens the receipt PDF inline) shown even when `receipts.enabled` is off; receipts
       keep their existing PDF with the new logo and HW number
-### v1.2 phase 4 — Email notifications (pending)
+### v1.2 phase 4 — Email notifications
+- [x] Company Gmail account in `Setup → Email → Connection` (`setup.email_settings`, super admin): address, app
+      password (encrypted, never shown back, spaces stripped), sender name, reply-to, server; a **Send test email**
+      that uses the typed values and explains Gmail errors in plain words; daily-limit warning from 400 per 24 h
+- [x] Nine events, each one editable template (`email_templates`, `setup.email`, admin): new transfer → every
+      active payout agent of the branch (not the sender unless self-claim is allowed); paid → sending agent **with
+      the receipt PDF**; cancelled → sending agent; top-up approved → the agent; claim expired → that agent; large
+      transfer → approvers; expense submitted → approvers (not the creator); expense approved / rejected → creator
+- [x] Templates: subject + plain-text body, `{placeholders}` per event (typos refused on save), live preview,
+      placeholder buttons, test send, reset to original; default texts leave phone / account numbers out; layout
+      (logo header, footer) is fixed; all values HTML-escaped
+- [x] Delivery: one `email_logs` row + one queued job per recipient (scheduler drains the queue), 3 tries
+      (1 and 5 minutes apart), then Failed with the reason; `Setup → Email → Sent emails` with filters and Retry;
+      sending never breaks the money operation; nothing happens while email is off or has no account
+- [x] Per-user switch `users.email_notifications` (default on) on the user forms
+- Not included: emails to customers (their email is not captured); an email when an admin force-assigns a transfer
+- Needs the real Gmail address + app password to prove the live connection (everything else is tested, including a
+  real SMTP conversation against a local sink)

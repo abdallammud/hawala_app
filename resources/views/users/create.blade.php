@@ -9,6 +9,12 @@
                     <x-input name="email" label="{{ __('Email') }}" type="email" />
                 </div>
 
+                <div>
+                    <input type="hidden" name="email_notifications" value="0">
+                    <x-checkbox name="email_notifications" label="{{ __('Send this person email notifications') }}" :checked="old('email_notifications', true)" />
+                    <p class="mt-1 text-xs text-slate-500">{{ __('Turn off if this address is a placeholder or not read.') }}</p>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <x-input name="phone" label="{{ __('Phone') }}" hint="{{ __('Optional — can also be used to log in.') }}" />
                     <x-input name="password" label="{{ __('Initial password') }}" type="password" />

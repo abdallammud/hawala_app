@@ -43,5 +43,11 @@
             </x-card>
         @endcan
 
+        @canany(['setup.email', 'setup.email_settings'])
+            <x-card :title="__('Email')" :subtitle="__('The company Gmail account, the wording of each email, and what was sent.')">
+                <x-button :href="auth()->user()->can('setup.email') ? route('setup.email-templates.index') : route('setup.email.edit')" variant="secondary" size="sm">{{ __('Manage') }}</x-button>
+            </x-card>
+        @endcanany
+
     </div>
 </x-layouts.app>

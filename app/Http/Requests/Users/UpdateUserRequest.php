@@ -22,6 +22,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($userId)],
+            'email_notifications' => ['nullable', 'boolean'],
             'phone' => ['nullable', 'string', 'max:32', Rule::unique('users', 'phone')->ignore($userId)],
             'type' => ['required', Rule::enum(UserType::class)],
             'branch_id' => ['required', Rule::exists('branches', 'id')->where('is_active', true)],

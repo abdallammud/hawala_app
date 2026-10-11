@@ -35,6 +35,7 @@ class ProductionSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             SmsTemplatesSeeder::class,
+            EmailTemplatesSeeder::class,
         ]);
 
         $this->systemLedgerAccounts();

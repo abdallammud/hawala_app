@@ -24,6 +24,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'email_notifications',
         'phone',
         'password',
         'type',
@@ -47,6 +48,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'email_notifications' => 'boolean',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_secret' => 'encrypted',
@@ -134,7 +136,7 @@ class User extends Authenticatable
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'email', 'phone', 'type', 'branch_id', 'is_active', 'send_commission_type', 'send_commission_value', 'payout_commission_type', 'payout_commission_value', 'max_credit_cents'])
+            ->logOnly(['name', 'email', 'email_notifications', 'phone', 'type', 'branch_id', 'is_active', 'send_commission_type', 'send_commission_value', 'payout_commission_type', 'payout_commission_value', 'max_credit_cents'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

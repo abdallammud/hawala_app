@@ -65,6 +65,12 @@
                     <x-input name="email" label="{{ __('Email') }}" type="email" :value="$user->email" />
                 </div>
 
+                <div>
+                    <input type="hidden" name="email_notifications" value="0">
+                    <x-checkbox name="email_notifications" label="{{ __('Send this person email notifications') }}" :checked="old('email_notifications', $user->email_notifications)" />
+                    <p class="mt-1 text-xs text-slate-500">{{ __('Turn off if this address is a placeholder or not read.') }}</p>
+                </div>
+
                 <x-input name="phone" label="{{ __('Phone') }}" :value="$user->phone" />
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">

@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Notifications\ClaimExpired;
 use App\Notifications\TransferAssigned;
 use App\Services\CommissionCalculator;
+use App\Services\Email\EmailNotifier;
 use App\Services\Ledger\LedgerService;
 use App\Support\Money;
 use App\Support\Settings;
@@ -153,6 +154,7 @@ class PayoutQueueService
         });
 
         SendTemplatedSms::dispatch(SmsEvent::TransferPaid, $paid->id);
+        app(EmailNotifier::class)->transferPaid($paid);
 
         return $paid;
     }
@@ -238,6 +240,7 @@ class PayoutQueueService
                     $transfer->id,
                     overrideRecipients: array_filter([$transfer->claimedBy?->phone]),
                 );
+                app(EmailNotifier::class)->claimExpired($transfer, $transfer->claimedBy);
             }
         }
 

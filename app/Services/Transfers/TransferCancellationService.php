@@ -13,6 +13,7 @@ use App\Models\CancellationRequest;
 use App\Models\Transfer;
 use App\Models\User;
 use App\Notifications\CancellationRequested;
+use App\Services\Email\EmailNotifier;
 use App\Services\Ledger\LedgerService;
 use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
@@ -83,6 +84,7 @@ class TransferCancellationService
         });
 
         SendTemplatedSms::dispatch(SmsEvent::TransferCancelled, $cancelled->id);
+        app(EmailNotifier::class)->transferCancelled($cancelled);
 
         return $cancelled;
     }
@@ -159,6 +161,7 @@ class TransferCancellationService
         // Held transfers skip the transfer_sent SMS at creation; it fires
         // here instead, once the money is genuinely on its way.
         SendTemplatedSms::dispatch(SmsEvent::TransferSent, $transfer->id);
+        app(EmailNotifier::class)->transferSent($transfer);
 
         return $transfer;
     }

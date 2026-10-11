@@ -67,6 +67,7 @@ class UsersController extends Controller
         $user = User::query()->create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'email_notifications' => $request->boolean('email_notifications', true),
             'phone' => $validated['phone'] ?? null,
             'password' => $validated['password'],
             'type' => $validated['type'],
@@ -103,6 +104,8 @@ class UsersController extends Controller
         $user->fill([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            // Absent (an older form) means leave it as it is.
+            'email_notifications' => $request->has('email_notifications') ? $request->boolean('email_notifications') : $user->email_notifications,
             'phone' => $validated['phone'] ?? null,
             'type' => $validated['type'],
             'branch_id' => $validated['branch_id'] ?? null,

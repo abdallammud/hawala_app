@@ -34,7 +34,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'users.manage_payout_accounts', 'users.set_credit_limit', 'users.reset_two_factor',
 
         'setup.branches', 'setup.account_types', 'setup.currencies', 'setup.fees', 'setup.settings',
-        'setup.sms', 'setup.roles',
+        'setup.sms', 'setup.roles', 'setup.email', 'setup.email_settings',
 
         'reports.transfers', 'reports.agent_statement', 'reports.uncollected', 'reports.credit',
         'reports.commissions', 'reports.payouts_by_method', 'reports.branch_summary',
@@ -52,7 +52,7 @@ class RolesAndPermissionsSeeder extends Seeder
     ];
 
     private const ADMIN_EXCLUDED = [
-        'setup.roles', 'setup.settings', 'adjustments.approve', 'audit.view',
+        'setup.roles', 'setup.settings', 'setup.email_settings', 'adjustments.approve', 'audit.view',
     ];
 
     private const SENDING_AGENT = [

@@ -14,6 +14,9 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\Setup\AccountTypesController;
 use App\Http\Controllers\Setup\BranchesController;
 use App\Http\Controllers\Setup\CurrenciesController;
+use App\Http\Controllers\Setup\EmailLogController;
+use App\Http\Controllers\Setup\EmailSettingsController;
+use App\Http\Controllers\Setup\EmailTemplatesController;
 use App\Http\Controllers\Setup\FeeTiersController;
 use App\Http\Controllers\Setup\SettingsController;
 use App\Http\Controllers\Setup\SetupController;
@@ -106,6 +109,27 @@ Route::middleware('auth')->group(function () {
         Route::get('/{smsTemplate}/edit', [SmsTemplatesController::class, 'edit'])->name('edit');
         Route::put('/{smsTemplate}', [SmsTemplatesController::class, 'update'])->name('update');
         Route::post('/{smsTemplate}/test', [SmsTemplatesController::class, 'test'])->name('test');
+    });
+
+    // --- Email -----------------------------------------------------------------
+    Route::prefix('setup/email')->middleware('can:setup.email_settings')->name('setup.email.')->group(function () {
+        Route::get('/', [EmailSettingsController::class, 'edit'])->name('edit');
+        Route::put('/', [EmailSettingsController::class, 'update'])->name('update');
+        Route::post('/test', [EmailSettingsController::class, 'test'])->middleware('throttle:10,1')->name('test');
+    });
+
+    Route::prefix('setup/email-templates')->middleware('can:setup.email')->name('setup.email-templates.')->group(function () {
+        Route::get('/', [EmailTemplatesController::class, 'index'])->name('index');
+        Route::get('/{emailTemplate}/edit', [EmailTemplatesController::class, 'edit'])->name('edit');
+        Route::put('/{emailTemplate}', [EmailTemplatesController::class, 'update'])->name('update');
+        Route::post('/{emailTemplate}/reset', [EmailTemplatesController::class, 'reset'])->name('reset');
+        Route::post('/{emailTemplate}/preview', [EmailTemplatesController::class, 'previewText'])->name('preview');
+        Route::post('/{emailTemplate}/test', [EmailTemplatesController::class, 'test'])->middleware('throttle:10,1')->name('test');
+    });
+
+    Route::prefix('setup/email-log')->middleware('can:setup.email')->name('setup.email-log.')->group(function () {
+        Route::get('/', [EmailLogController::class, 'index'])->name('index');
+        Route::post('/{emailLog}/retry', [EmailLogController::class, 'retry'])->name('retry');
     });
 
     Route::prefix('setup/settings')->middleware('can:setup.settings')->name('setup.settings.')->group(function () {

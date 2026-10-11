@@ -51,10 +51,12 @@ class DemoSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             SmsTemplatesSeeder::class,
+            EmailTemplatesSeeder::class,
         ]);
 
         // SMS off during seeding: a demo must not try to text anybody.
         Settings::set('sms.enabled', false);
+        Settings::set('email.enabled', false);
 
         $this->referenceData();
 

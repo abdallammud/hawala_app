@@ -14,6 +14,7 @@ use App\Models\ExpenseType;
 use App\Models\User;
 use App\Notifications\ExpenseDecided;
 use App\Notifications\ExpenseSubmitted;
+use App\Services\Email\EmailNotifier;
 use App\Services\Ledger\LedgerService;
 use App\Services\Rates\QuoteService;
 use App\Services\Rates\RateService;
@@ -84,6 +85,8 @@ class ExpenseService
         User::permission('expenses.approve')
             ->where('id', '!=', $by->id)
             ->each(fn (User $approver) => $approver->notify(new ExpenseSubmitted($expense)));
+
+        app(EmailNotifier::class)->expenseSubmitted($expense);
 
         return $expense;
     }
@@ -165,6 +168,7 @@ class ExpenseService
         });
 
         $approved->createdBy->notify(new ExpenseDecided($approved));
+        app(EmailNotifier::class)->expenseDecided($approved);
 
         return $approved;
     }
@@ -188,6 +192,7 @@ class ExpenseService
         });
 
         $rejected->createdBy->notify(new ExpenseDecided($rejected));
+        app(EmailNotifier::class)->expenseDecided($rejected);
 
         return $rejected;
     }

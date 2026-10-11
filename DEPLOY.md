@@ -302,6 +302,8 @@ Work through these in the app as the super admin:
       payout agent their payout accounts
 - [ ] `Setup → SMS Templates` — write the messages, send a test, then turn
       SMS on in Settings once the gateway is confirmed
+- [ ] `Setup → Email` — see "Email" below: connect the company Gmail, send a test,
+      read the templates, then switch email on
 - [ ] Log in as the super admin and **set up two-factor** (authenticator app) —
       you are asked to straight away. Save the recovery codes somewhere safe.
       Every other user does the same at their first login
@@ -311,6 +313,42 @@ Work through these in the app as the super admin:
 - [ ] `php artisan hawala:verify-ledger` — must report no problems
 - [ ] Check the cron has run (`storage/logs/laravel.log`, or that rates
       refreshed on the hour)
+
+---
+
+## Email (company Gmail)
+
+The system emails payout agents when a transfer arrives, the sending agent the
+receipt when it is paid, approvers when an expense needs approving, and so on
+(`Setup → Email → Templates` lists every email and who gets it). It sends them
+from one company Gmail account with an **app password**.
+
+1. Create the Gmail account. Turn on **2-Step Verification** (Google Account →
+   Security), then create an **App password** (Security → App passwords).
+2. `Setup → Email → Connection` (super admin): enter the address and the 16
+   letters, tick **Send emails**, save. Use **Send test email** first — it uses
+   what is in the boxes and shows the exact error if Gmail refuses.
+3. `Setup → Email → Templates`: read and adjust the wording. Each has a live
+   preview, placeholder buttons, a test send and "Reset to original".
+4. Check `APP_URL` in `.env` is the real https address: the links in the emails
+   are built from it.
+
+Things to know:
+
+- Emails are queued and sent by the scheduler, so they leave within about a
+  minute (same cron as step 8). Nothing extra to run.
+- Free Gmail allows about **500 emails a day** (Google Workspace 2,000). A
+  transfer emails every active payout agent of its branch, so a busy branch
+  adds up; the Email pages warn from 400 in 24 hours. Failed emails are kept in
+  `Setup → Email → Sent emails` with the reason and a **Retry** button.
+- Hostinger must allow outgoing SMTP on port 587 (or 465). The test email proves
+  it; if it times out, ask Hostinger support to allow it.
+- The app password is stored encrypted with `APP_KEY` (like the 2FA secrets), so
+  do not change `APP_KEY` on a live system — if you must, enter the password again.
+- Per person: `Users → Edit → Send this person email notifications` switches
+  their emails off (useful for placeholder addresses).
+- The default texts leave phone and account numbers out on purpose, because
+  email is less private than the system. Add the placeholders only if you want them.
 
 ---
 

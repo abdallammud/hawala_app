@@ -16,6 +16,7 @@ use App\Models\JournalEntry;
 use App\Models\User;
 use App\Notifications\BalanceRequestDecided;
 use App\Notifications\BalanceRequestSubmitted;
+use App\Services\Email\EmailNotifier;
 use App\Services\Ledger\LedgerService;
 use App\Support\Money;
 use App\Support\Settings;
@@ -159,6 +160,8 @@ class BalanceRequestService
         // Only a balance top-up is worth an SMS; commission moves and
         // withdrawals are agent-side bookkeeping.
         if (in_array($approved->kind, [BalanceRequestKind::TopupPaid, BalanceRequestKind::TopupCredit], true)) {
+            app(EmailNotifier::class)->topupApproved($approved);
+
             SendTemplatedSms::dispatch(
                 SmsEvent::TopupApproved,
                 extraValues: [

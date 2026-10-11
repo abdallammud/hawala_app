@@ -22,6 +22,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email_notifications' => ['nullable', 'boolean'],
             'phone' => ['nullable', 'string', 'max:32', 'unique:users,phone'],
             'password' => ['required', 'string', Password::defaults()],
             'type' => ['required', Rule::enum(UserType::class)],
