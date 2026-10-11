@@ -138,9 +138,13 @@ class DemoSeeder extends Seeder
             ['Running Cost', 4200, 'Generator fuel', 5],
         ];
 
+        // A second person approves them: nobody approves their own expense.
+        $approver = $this->user('finance@bluestar.test', 'Demo Finance', '+252611000009', UserType::Staff);
+        $approver->syncRoles(['admin']);
+
         foreach ($items as [$type, $cents, $payee, $daysAgo]) {
             try {
-                $service->record(
+                $expense = $service->record(
                     $admin,
                     ExpenseType::findOrFail($types[$type]),
                     $paidFrom,
@@ -148,6 +152,10 @@ class DemoSeeder extends Seeder
                     // Fixed token per item, so seeding twice records each once.
                     (string) Uuid::uuid5(Uuid::NAMESPACE_DNS, 'demo-expense-'.Str::slug($type)),
                 );
+
+                if ($expense->isPending()) {
+                    $service->approve($expense, $approver);
+                }
             } catch (InsufficientBalanceException) {
                 // The demo account is too thin for this one — skip it, it's only sample data.
             }

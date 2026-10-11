@@ -15,9 +15,10 @@ class Expense extends Model
 
     protected $fillable = [
         'expense_type_id', 'branch_id', 'company_account_id',
-        'amount_cents', 'original_currency', 'original_amount_cents', 'rate',
+        'number', 'amount_cents', 'original_currency', 'original_amount_cents', 'rate',
         'expense_date', 'payee', 'reference', 'description',
-        'status', 'journal_entry_id', 'void_journal_entry_id', 'voided_by', 'voided_at', 'void_reason',
+        'status', 'journal_entry_id', 'decided_by', 'decided_at', 'decision_reason',
+        'attachment_path', 'attachment_name',
         'created_by', 'idempotency_key',
     ];
 
@@ -26,7 +27,7 @@ class Expense extends Model
         return [
             'status' => ExpenseStatus::class,
             'expense_date' => 'date',
-            'voided_at' => 'datetime',
+            'decided_at' => 'datetime',
             'amount_cents' => 'integer',
             'original_amount_cents' => 'integer',
         ];
@@ -52,14 +53,44 @@ class Expense extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function voidedBy(): BelongsTo
+    public function decidedBy(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'voided_by');
+        return $this->belongsTo(User::class, 'decided_by');
     }
 
-    public function isVoided(): bool
+    public function isPending(): bool
     {
-        return $this->status === ExpenseStatus::Voided;
+        return $this->status === ExpenseStatus::Pending;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->status === ExpenseStatus::Approved;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === ExpenseStatus::Rejected;
+    }
+
+    /**
+     * Maker ≠ checker: the person who recorded an expense can never approve,
+     * reject or reopen it. Lives here, not only in the policy, because
+     * Gate::before grants a super-admin every policy check.
+     */
+    public function isOwnedBy(User $user): bool
+    {
+        return $this->created_by === $user->id;
+    }
+
+    public function hasAttachment(): bool
+    {
+        return $this->attachment_path !== null;
+    }
+
+    public function attachmentIsImage(): bool
+    {
+        return $this->hasAttachment() && preg_match('/\.(jpe?g|png)$/i', $this->attachment_path) === 1;
     }
 
     /**
@@ -88,7 +119,8 @@ class Expense extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['expense_type_id', 'amount_cents', 'expense_date', 'payee', 'reference', 'description', 'status'])
+            // Status changes are logged by ExpenseService with who decided and why.
+            ->logOnly(['number', 'expense_type_id', 'company_account_id', 'amount_cents', 'expense_date', 'payee', 'reference', 'description'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

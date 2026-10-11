@@ -3,6 +3,7 @@
 namespace App\Services\Transfers;
 
 use App\Models\Transfer;
+use App\Support\Brand;
 use App\Support\Money;
 use App\Support\Settings;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -27,7 +28,7 @@ class ReceiptService
         return Pdf::loadView('transfers.receipt', [
             'transfer' => $transfer,
             'companyName' => Settings::get('general.company_name', config('app.name')),
-            'logo' => $this->logoData(),
+            'logo' => Brand::logoDataUri(),
             'timezone' => Settings::get('general.timezone', 'Africa/Mogadishu'),
         ])->setPaper('a4');
     }
@@ -74,26 +75,5 @@ class ReceiptService
     {
         // No number: WhatsApp asks the agent to pick a contact.
         return 'https://wa.me/?text='.rawurlencode($this->whatsappText($transfer));
-    }
-
-    /**
-     * The logo as a data URI. dompdf resolves remote URLs unreliably on
-     * shared hosting, so the bytes are embedded instead.
-     *
-     * Prefers the small receipt-sized copy: the full logo-mark is 862px and
-     * 400 KB, which base64-encoded turned every one-page receipt into a
-     * 1.3 MB download for an agent to share over mobile data.
-     */
-    private function logoData(): ?string
-    {
-        foreach (['images/logo-receipt.png', 'images/logo-mark.png'] as $candidate) {
-            $path = public_path($candidate);
-
-            if (is_file($path)) {
-                return 'data:image/png;base64,'.base64_encode((string) file_get_contents($path));
-            }
-        }
-
-        return null;
     }
 }

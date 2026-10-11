@@ -2,8 +2,8 @@
     @include('partials.expenses-tabs', ['active' => 'expenses'])
 
     <div class="max-w-2xl">
-        <x-card :title="__('Add expense')" :subtitle="__('Paid out of a company account. The amount leaves that account straight away.')">
-            <form method="POST" action="{{ route('expenses.store') }}" class="space-y-5">
+        <x-card :title="__('Add expense')" :subtitle="__('Paid out of a company account. It stays pending until someone else approves it; the money only leaves the account then.')">
+            <form method="POST" action="{{ route('expenses.store') }}" enctype="multipart/form-data" class="space-y-5">
                 @csrf
                 <input type="hidden" name="idempotency_key" value="{{ $idempotencyKey }}">
 
@@ -28,13 +28,15 @@
 
                 <x-textarea name="description" label="{{ __('Note') }}" />
 
+                @include('expenses.partials.attachment-input')
+
                 <p class="text-xs text-slate-500">
                     {{ __('Recorded under your branch') }}: <span class="font-medium text-slate-700">{{ $branch?->name ?? __('none') }}</span>
                 </p>
 
                 <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">
                     <x-button :href="route('expenses.index')" variant="ghost">{{ __('Back') }}</x-button>
-                    <x-button type="submit">{{ __('Record expense') }}</x-button>
+                    <x-button type="submit">{{ __('Submit for approval') }}</x-button>
                 </div>
             </form>
         </x-card>

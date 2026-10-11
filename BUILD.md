@@ -871,6 +871,23 @@ destination branch; extra email events = expense approval, cancelled, top-up app
       `number_sequences` counter inside the create transaction: no duplicates, no gaps on failed saves.
       The New Transfer form says "Assigned when you send" (no number is reserved up front)
 
-### v1.2 phase 2 — Expense approval (pending)
+### v1.2 phase 2 — Expense approval
+- [x] Statuses Pending / Approved / Rejected (replace Paid / Voided). Every new expense is Pending and moves no
+      money; legacy Paid → Approved ("Paid before approvals existed"), Voided → Rejected (void reason kept in the reason)
+- [x] Maker ≠ checker: `ExpenseService` refuses approve / reject / return-to-pending by the creator on the locked row
+      (super-admin included — `Gate::before` skips checks about an `Expense`), policy + `can:expenses.approve`
+      route middleware + hidden buttons, and a MySQL CHECK `decided_by <> created_by`
+- [x] Approving posts Dr Operating expenses / Cr company account (balance checked under lock; `created_by` =
+      the recorder, `approved_by` = the approver). Rejecting posts nothing. Return to pending (approved or
+      rejected) posts the reversing entry and clears the decision; approved/rejected are locked, pending is editable
+- [x] Decision record: `decided_by`, `decided_at`, optional `decision_reason`; history timeline on the expense and
+      in the audit log (events approved / rejected / returned / deleted)
+- [x] Permissions `expenses.approve`, `expenses.delete`; `expenses.void` retired (migration moves it to
+      approve + delete and gives both to the admin role)
+- [x] Row actions: View, Print voucher (PDF with logo and signature lines), Delete (hard delete; approved ones are
+      shown switched off — return to pending first; ledger rows stay, per money rule 5)
+- [x] Optional attachment (PDF/JPG/PNG ≤ 5 MB) on private storage, served only to people who may view the expense
+- [x] Voucher numbers `EX-0001…` (shared `number_sequences`); in-app notifications to approvers and to the creator
+- [ ] Expenses report with status / category / branch / date, Print and PDF → phase 3
 ### v1.2 phase 3 — Report print / PDF, transfer print icon, expenses report (pending)
 ### v1.2 phase 4 — Email notifications (pending)

@@ -174,6 +174,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:expenses.view_own')->group(function () {
         Route::get('/expenses', [ExpensesController::class, 'index'])->name('expenses.index');
         Route::get('/expenses/{expense}', [ExpensesController::class, 'show'])->name('expenses.show');
+        Route::get('/expenses/{expense}/print', [ExpensesController::class, 'print'])->name('expenses.print');
+        Route::get('/expenses/{expense}/attachment', [ExpensesController::class, 'attachment'])->name('expenses.attachment');
     });
 
     Route::middleware('can:expenses.edit')->group(function () {
@@ -181,8 +183,14 @@ Route::middleware('auth')->group(function () {
         Route::put('/expenses/{expense}', [ExpensesController::class, 'update'])->name('expenses.update');
     });
 
-    Route::post('/expenses/{expense}/void', [ExpensesController::class, 'void'])
-        ->middleware('can:expenses.void')->name('expenses.void');
+    Route::middleware('can:expenses.approve')->group(function () {
+        Route::post('/expenses/{expense}/approve', [ExpensesController::class, 'approve'])->name('expenses.approve');
+        Route::post('/expenses/{expense}/reject', [ExpensesController::class, 'reject'])->name('expenses.reject');
+        Route::post('/expenses/{expense}/reopen', [ExpensesController::class, 'reopen'])->name('expenses.reopen');
+    });
+
+    Route::delete('/expenses/{expense}', [ExpensesController::class, 'destroy'])
+        ->middleware('can:expenses.delete')->name('expenses.destroy');
 
     // --- Payout queue --------------------------------------------------------
     Route::middleware('can:queue.view')->group(function () {

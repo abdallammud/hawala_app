@@ -36,7 +36,7 @@ class AuditLogController extends Controller
             'activities' => $activities,
             'users' => User::query()->orderBy('name')->pluck('name', 'id'),
             'subjectTypes' => $subjectTypes,
-            'events' => ['created' => __('Created'), 'updated' => __('Updated'), 'deleted' => __('Deleted')],
+            'events' => ['created' => __('Created'), 'updated' => __('Updated'), 'deleted' => __('Deleted'), 'approved' => __('Approved'), 'rejected' => __('Rejected'), 'returned' => __('Returned to pending')],
         ]);
     }
 }

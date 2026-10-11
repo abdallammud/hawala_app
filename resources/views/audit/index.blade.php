@@ -31,6 +31,9 @@
                                     @endif
                                 </p>
                                 <p class="text-xs text-slate-500 mt-0.5">{{ $activity->created_at->format('M j, Y H:i') }}</p>
+                                @if (! empty($activity->properties['reason']))
+                                    <p class="text-xs text-slate-600 mt-1">{{ __('Reason') }}: {{ $activity->properties['reason'] }}</p>
+                                @endif
                             </div>
 
                             @if (! empty($activity->properties['attributes']) || ! empty($activity->properties['old']))

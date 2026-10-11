@@ -4,22 +4,25 @@ namespace App\Enums;
 
 enum ExpenseStatus: string
 {
-    case Posted = 'posted';
-    case Voided = 'voided';
+    case Pending = 'pending';
+    case Approved = 'approved';
+    case Rejected = 'rejected';
 
     public function label(): string
     {
         return match ($this) {
-            self::Posted => __('Paid'),
-            self::Voided => __('Voided'),
+            self::Pending => __('Pending'),
+            self::Approved => __('Approved'),
+            self::Rejected => __('Rejected'),
         };
     }
 
     public function color(): string
     {
         return match ($this) {
-            self::Posted => 'green',
-            self::Voided => 'slate',
+            self::Pending => 'amber',
+            self::Approved => 'green',
+            self::Rejected => 'red',
         };
     }
 

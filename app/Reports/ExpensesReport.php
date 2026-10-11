@@ -8,7 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 
 /**
- * Every expense paid in the period (voided ones left out), scoped to the
+ * Every expense paid in the period (approved ones only), scoped to the
  * user's own / branch / all.
  */
 class ExpensesReport extends Report
@@ -79,7 +79,7 @@ class ExpensesReport extends Report
     {
         return Expense::query()
             ->visibleTo($user)
-            ->where('status', ExpenseStatus::Posted)
+            ->where('status', ExpenseStatus::Approved)
             ->whereBetween('expense_date', [$filters->from->toDateString(), $filters->to->toDateString()])
             ->when($filters->branchId, fn ($q) => $q->where('branch_id', $filters->branchId))
             ->when($filters->expenseTypeId, fn ($q) => $q->where('expense_type_id', $filters->expenseTypeId));

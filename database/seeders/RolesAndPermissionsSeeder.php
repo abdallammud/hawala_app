@@ -44,7 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'customers.view_own', 'customers.view_all', 'customers.edit',
 
         'expenses.view_own', 'expenses.view_branch', 'expenses.view_all', 'expenses.create',
-        'expenses.edit', 'expenses.void', 'expenses.types',
+        'expenses.edit', 'expenses.approve', 'expenses.delete', 'expenses.types',
 
         'audit.view',
 

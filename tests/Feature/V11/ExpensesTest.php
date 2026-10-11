@@ -74,6 +74,14 @@ function addExpense(User $by, array $overrides = [], ?CompanyAccount $from = nul
     );
 }
 
+/** An expense that has been through approval, by a second admin. */
+function approvedExpense(User $creator, array $overrides = [], ?CompanyAccount $from = null, ?ExpenseType $type = null): Expense
+{
+    $expense = addExpense($creator, $overrides, $from, $type);
+
+    return app(ExpenseService::class)->approve($expense, makeAdmin());
+}
+
 function expFilters(array $o = []): ReportFilters
 {
     return new ReportFilters(CarbonImmutable::now()->subYear(), CarbonImmutable::now()->addDay(), branchId: $o['branch'] ?? null, expenseTypeId: $o['type'] ?? null);
@@ -130,7 +138,7 @@ it('keeps expense types to people who may manage them', function () {
 
 // --- Recording ----------------------------------------------------------------------
 
-it('pays an expense out of the company account through the ledger', function () {
+it('records a pending expense and moves no money', function () {
     $clerk = bookkeeper($this->branch);
 
     $this->actingAs($clerk)->post('/expenses', expenseForm())->assertRedirect();
@@ -138,15 +146,14 @@ it('pays an expense out of the company account through the ledger', function () 
     $expense = Expense::sole();
 
     expect($expense->amount_cents)->toBe(25000)
+        ->and($expense->number)->toBe('EX-0001')
         ->and($expense->branch_id)->toBe($this->branch->id)
         ->and($expense->created_by)->toBe($clerk->id)
-        ->and($expense->status)->toBe(ExpenseStatus::Posted)
-        ->and($expense->journal_entry_id)->not->toBeNull()
-        ->and(companyBalance($this->company))->toBe(75000)
-        ->and(expensesBalance())->toBe(25000)
-        ->and(JournalLine::sum('amount_cents'))->toBe(0);
-
-    $this->artisan('hawala:verify-ledger')->assertSuccessful();
+        ->and($expense->status)->toBe(ExpenseStatus::Pending)
+        ->and($expense->journal_entry_id)->toBeNull()
+        ->and(companyBalance($this->company))->toBe(100000)
+        ->and(expensesBalance())->toBe(0)
+        ->and(JournalLine::count())->toBe(2); // only the opening capital
 });
 
 it('takes the branch from the user, never from the form', function () {
@@ -165,7 +172,7 @@ it('records an expense once, however many times the form is sent', function () {
     $this->actingAs($clerk)->post('/expenses', $form);
     $this->actingAs($clerk)->post('/expenses', $form);
 
-    expect(Expense::count())->toBe(1)->and(companyBalance($this->company))->toBe(75000);
+    expect(Expense::count())->toBe(1)->and(Expense::sole()->number)->toBe('EX-0001');
 });
 
 it('converts a foreign-currency expense to dollars and keeps what was typed', function () {
@@ -177,20 +184,7 @@ it('converts a foreign-currency expense to dollars and keeps what was typed', fu
     expect($expense->amount_cents)->toBe(10800)
         ->and($expense->original_currency)->toBe('EUR')
         ->and($expense->original_amount_cents)->toBe(10000)
-        ->and((float) $expense->rate)->toBe(1.08)
-        ->and(companyBalance($this->company))->toBe(100000 - 10800);
-});
-
-it('refuses an expense the account cannot cover, and posts nothing', function () {
-    $poor = expenseCompany(1000, 'Petty cash');
-
-    $this->actingAs(bookkeeper($this->branch))
-        ->post('/expenses', expenseForm(['company_account_id' => $poor->id, 'amount' => '50']))
-        ->assertSessionHasErrors('company_account_id');
-
-    expect(Expense::count())->toBe(0)
-        ->and(companyBalance($poor))->toBe(1000)
-        ->and(expensesBalance())->toBe(0);
+        ->and((float) $expense->rate)->toBe(1.08);
 });
 
 it('validates the form', function () {
@@ -220,56 +214,25 @@ function H_sendingAgentForExpenses(): User
     return $u;
 }
 
-// --- Editing and voiding ----------------------------------------------------------------
+// --- Editing ----------------------------------------------------------------
 
-it('lets details change but never the amount or account', function () {
+it('lets a pending expense change in every field', function () {
     $admin = makeAdmin();
     $expense = addExpense($admin);
+    $petty = expenseCompany(0, 'Petty cash');
 
     $this->actingAs($admin)->put("/expenses/{$expense->id}", [
         'expense_type_id' => ExpenseType::where('name', 'Running Cost')->value('id'),
+        'company_account_id' => $petty->id,
+        'currency' => 'USD',
+        'amount' => '99.50',
         'expense_date' => today()->toDateString(), 'payee' => 'New landlord', 'reference' => 'INV-9', 'description' => 'March',
-        'amount' => '9999', 'company_account_id' => 999,
     ])->assertRedirect();
 
     $expense->refresh();
 
     expect($expense->payee)->toBe('New landlord')->and($expense->type->name)->toBe('Running Cost')
-        ->and($expense->amount_cents)->toBe(25000)->and($expense->company_account_id)->toBe($this->company->id);
-});
-
-it('voids an expense by reversing it in the ledger', function () {
-    $admin = makeAdmin();
-    $expense = addExpense($admin);
-
-    $this->actingAs($admin)->post("/expenses/{$expense->id}/void", ['reason' => 'Entered twice'])->assertRedirect();
-
-    $expense->refresh();
-
-    expect($expense->status)->toBe(ExpenseStatus::Voided)
-        ->and($expense->void_reason)->toBe('Entered twice')
-        ->and($expense->voided_by)->toBe($admin->id)
-        ->and(companyBalance($this->company))->toBe(100000)
-        ->and(expensesBalance())->toBe(0)
-        ->and(JournalLine::sum('amount_cents'))->toBe(0)
-        ->and(JournalLine::count())->toBeGreaterThan(2); // history kept, not deleted
-
-    // Not twice, not edited afterwards, reason mandatory.
-    $this->actingAs($admin)->post("/expenses/{$expense->id}/void", ['reason' => 'again'])->assertForbidden();
-    $this->actingAs($admin)->get("/expenses/{$expense->id}/edit")->assertForbidden();
-    expect(companyBalance($this->company))->toBe(100000);
-
-    $this->artisan('hawala:verify-ledger')->assertSuccessful();
-});
-
-it('wants a reason to void and the void permission', function () {
-    $expense = addExpense(makeAdmin());
-    $clerk = bookkeeper($this->branch, ['expenses.view_all', 'expenses.create']);
-
-    $this->actingAs($clerk)->post("/expenses/{$expense->id}/void", ['reason' => 'x'])->assertForbidden();
-    $this->actingAs(makeAdmin())->post("/expenses/{$expense->id}/void", [])->assertSessionHasErrors('reason');
-
-    expect($expense->fresh()->status)->toBe(ExpenseStatus::Posted);
+        ->and($expense->amount_cents)->toBe(9950)->and($expense->company_account_id)->toBe($petty->id);
 });
 
 // --- Who sees what ----------------------------------------------------------------------
@@ -318,12 +281,13 @@ it('shows Expenses in the menu only to those who may open it', function () {
 
 // --- Reports and profit ---------------------------------------------------------------------
 
-it('reports expenses, leaving out voided ones, and by type', function () {
+it('reports approved expenses only, and by type', function () {
     $admin = makeAdmin();
-    addExpense($admin, ['amount_cents' => 30000]);
-    addExpense($admin, ['amount_cents' => 10000], type: ExpenseType::where('name', 'Staff Payroll')->first());
-    $voided = addExpense($admin, ['amount_cents' => 5000]);
-    app(ExpenseService::class)->void($voided, $admin, 'oops');
+    approvedExpense($admin, ['amount_cents' => 30000]);
+    approvedExpense($admin, ['amount_cents' => 10000], type: ExpenseType::where('name', 'Staff Payroll')->first());
+    addExpense($admin, ['amount_cents' => 5000]); // still pending: not paid, so not reported
+    $rejected = addExpense($admin, ['amount_cents' => 4000]);
+    app(ExpenseService::class)->reject($rejected, makeAdmin());
 
     $detail = app(ReportRegistry::class)->find('expenses');
     $rows = $detail->rows(expFilters(), $admin);
@@ -340,9 +304,9 @@ it('reports expenses, leaving out voided ones, and by type', function () {
 });
 
 it('scopes the expense reports like the list', function () {
-    addExpense(bookkeeper($this->hargeisa), ['amount_cents' => 7000]);
+    approvedExpense(bookkeeper($this->hargeisa), ['amount_cents' => 7000]);
     $mine = bookkeeper($this->branch, ['expenses.view_own', 'expenses.create', 'reports.expenses']);
-    addExpense($mine, ['amount_cents' => 3000]);
+    approvedExpense($mine, ['amount_cents' => 3000]);
 
     $rows = app(ReportRegistry::class)->find('expenses')->rows(expFilters(), $mine);
 
@@ -359,7 +323,7 @@ it('takes expenses off the profit', function () {
         [$ledger->accountFor($this->company, LedgerAccountType::Company), 50000],
         [$ledger->system(LedgerAccountType::FeeIncome), -50000],
     ], null, $admin);
-    addExpense($admin, ['amount_cents' => 20000]);
+    approvedExpense($admin, ['amount_cents' => 20000]);
 
     $row = app(ReportRegistry::class)->find('profit')->rows(
         new ReportFilters(CarbonImmutable::now()->subDay(), CarbonImmutable::now()->addDay(), groupBy: 'day'), $admin
