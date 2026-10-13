@@ -115,7 +115,9 @@ Route::middleware('auth')->group(function () {
     Route::prefix('setup/email')->middleware('can:setup.email_settings')->name('setup.email.')->group(function () {
         Route::get('/', [EmailSettingsController::class, 'edit'])->name('edit');
         Route::put('/', [EmailSettingsController::class, 'update'])->name('update');
-        Route::post('/test', [EmailSettingsController::class, 'test'])->middleware('throttle:10,1')->name('test');
+        // The Test button sits inside the settings form (to test unsaved values),
+        // so the browser sends it with that form's hidden _method=PUT.
+        Route::match(['POST', 'PUT'], '/test', [EmailSettingsController::class, 'test'])->middleware('throttle:10,1')->name('test');
     });
 
     Route::prefix('setup/email-templates')->middleware('can:setup.email')->name('setup.email-templates.')->group(function () {

@@ -505,6 +505,25 @@ it('sends a test email with what is typed in the form', function () {
     expect(config('mail.mailers.hawala.username'))->toBe('typed@gmail.com');
 });
 
+it('accepts the test button as the browser sends it, from inside the settings form', function () {
+    Mail::fake();
+
+    // The form is spoofed to PUT for Save; the Test button reuses it with formaction.
+    $this->actingAs(makeSuperAdmin())->post('/setup/email/test', [
+        '_method' => 'PUT',
+        'email_enabled' => '1', 'email_host' => 'smtp.gmail.com', 'email_port' => '587',
+        'email_username' => 'typed@gmail.com', 'email_password' => 'typedpasswordtyped',
+        'email_from_name' => '', 'email_reply_to' => '',
+        'test_to' => 'me@example.com',
+    ])->assertSessionHas('status')->assertSessionHasNoErrors();
+
+    Mail::assertSent(TemplatedMail::class, fn ($m) => $m->hasTo('me@example.com'));
+
+    // And the page really does render the button that way.
+    $html = $this->actingAs(makeSuperAdmin())->get('/setup/email')->getContent();
+    expect($html)->toContain('name="_method" value="PUT"')->toContain('formaction="'.route('setup.email.test').'"');
+});
+
 it('shows the real error when the test fails, in plain words', function () {
     $super = makeSuperAdmin();
     Mail::shouldReceive('purge')->andReturnNull();
