@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Transfers\StoreTransferRequest;
 use App\Models\AccountType;
 use App\Models\Branch;
+use App\Models\City;
 use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Transfer;
@@ -111,6 +112,7 @@ class TransfersController extends Controller
                 'province' => $lastSender?->sender_province,
             ],
             'countries' => config('hawala.countries'),
+            'citiesByCountry' => City::namesByCountry(),
             'idempotencyKey' => $idempotencyKey,
         ]);
     }
@@ -275,6 +277,19 @@ class TransfersController extends Controller
         }
 
         return back()->with('status', __('Transfer rejected and fully refunded.'));
+    }
+
+    public function clearUncollected(Request $request, Transfer $transfer): RedirectResponse
+    {
+        $this->authorize('clearUncollected', $transfer);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $this->collections->clearFlag($transfer, $request->user(), $validated['reason']);
+
+        return back()->with('status', __('Uncollected flag cleared.'));
     }
 
     public function recordCollection(Request $request, Transfer $transfer): RedirectResponse

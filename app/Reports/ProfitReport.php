@@ -87,7 +87,7 @@ class ProfitReport extends Report
             ->get();
 
         return $lines
-            ->groupBy(fn ($line) => $line->created_at->format($format))
+            ->groupBy(fn ($line) => $line->created_at->toLocal()->format($format))
             ->map(function (Collection $group, string $period) {
                 $sum = function (LedgerAccountType $type) use ($group) {
                     return (int) $group

@@ -19,7 +19,7 @@
 
             @foreach ($statement as $row)
                 <tr>
-                    <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $row->created_at->format('M j, Y H:i') }}</td>
+                    <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $row->created_at->toLocal()->format('M j, Y H:i') }}</td>
                     <td class="px-4 py-3 text-slate-700" data-label="{{ __('Description') }}">
                         {{ str($row->type->value)->replace('_', ' ')->title() }}
                         @if ($row->memo)

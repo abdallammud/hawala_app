@@ -23,7 +23,7 @@
                             @endif
                         </div>
                         <p class="text-sm text-slate-500 mt-1">
-                            {{ __('Created :when by :agent', ['when' => $transfer->created_at->format('M j, Y H:i'), 'agent' => $transfer->sendingAgent->name]) }}
+                            {{ __('Created :when by :agent', ['when' => $transfer->created_at->toLocal()->format('M j, Y H:i'), 'agent' => $transfer->sendingAgent->name]) }}
                         </p>
                     </div>
                     <div class="flex items-start gap-3 shrink-0">
@@ -207,6 +207,22 @@
                         </div>
                     @endif
 
+                    @can('clearUncollected', $transfer)
+                        <form method="POST" action="{{ route('transfers.clear-uncollected', $transfer) }}"
+                              x-data="{ open: false }" class="border-t border-slate-100 pt-5 mt-5">
+                            @csrf
+                            <button type="button" x-show="!open" x-on:click="open = true" class="text-sm text-slate-500 hover:text-slate-800 underline">
+                                {{ __('Clear uncollected flag') }}
+                            </button>
+                            <div x-show="open" x-cloak class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                                <div class="sm:col-span-3">
+                                    <x-input name="reason" label="{{ __('Reason (e.g. flag ticked by mistake)') }}" required maxlength="500" />
+                                </div>
+                                <x-button type="submit" variant="secondary">{{ __('Clear flag') }}</x-button>
+                            </div>
+                        </form>
+                    @endcan
+
                     @can('recordCollection', $transfer)
                         <form method="POST" action="{{ route('transfers.collections.store', $transfer) }}" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end border-t border-slate-100 pt-5">
                             @csrf
@@ -254,7 +270,7 @@
                             <div class="mt-1.5 h-2 w-2 rounded-full shrink-0 {{ $event['color'] }}"></div>
                             <div class="min-w-0">
                                 <p class="text-sm font-medium text-slate-900">{{ $event['label'] }}</p>
-                                <p class="text-xs text-slate-500">{{ $event['at']->format('M j, Y H:i') }}</p>
+                                <p class="text-xs text-slate-500">{{ $event['at']->toLocal()->format('M j, Y H:i') }}</p>
                                 @if ($event['who'])
                                     <p class="text-xs text-slate-500">{{ $event['who'] }}</p>
                                 @endif

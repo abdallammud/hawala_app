@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\LocalTime;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Spatie\Activitylog\Models\Activity;
@@ -18,8 +19,8 @@ class AuditLogController extends Controller
             ->when($request->filled('user_id'), fn ($q) => $q->where('causer_id', $request->integer('user_id')))
             ->when($request->filled('subject_type'), fn ($q) => $q->where('subject_type', $request->string('subject_type')))
             ->when($request->filled('event'), fn ($q) => $q->where('event', $request->string('event')))
-            ->when($request->filled('from'), fn ($q) => $q->where('created_at', '>=', $request->date('from')->startOfDay()))
-            ->when($request->filled('to'), fn ($q) => $q->where('created_at', '<=', $request->date('to')->endOfDay()))
+            ->when($request->filled('from'), fn ($q) => $q->where('created_at', '>=', LocalTime::dayStart($request->string('from')->toString())))
+            ->when($request->filled('to'), fn ($q) => $q->where('created_at', '<=', LocalTime::dayEnd($request->string('to')->toString())))
             ->latest()
             ->paginate(30)
             ->withQueryString();

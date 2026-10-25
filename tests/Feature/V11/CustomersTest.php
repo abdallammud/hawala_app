@@ -118,7 +118,7 @@ it('prefills the form from a customer', function () {
 
     $this->actingAs($agent)->get('/transfers/create?customer='.$customer->id)->assertOk()
         ->assertSee('value="Hodan Nur"', false)
-        ->assertSee('value="Stockholm"', false);
+        ->assertSee("value: 'Stockholm'", false);
 });
 
 // --- Search ------------------------------------------------------------------

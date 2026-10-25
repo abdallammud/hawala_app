@@ -41,6 +41,57 @@
 }
 
 /*
+ * Scrolling notice strips (partials/agent-banners). The track holds two
+ * identical items; sliding it by half its width loops without a jump.
+ */
+.marquee {
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.marquee-track {
+    display: flex;
+    width: max-content;
+    animation: marquee-scroll 30s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+    animation-play-state: paused;
+}
+
+.marquee-item {
+    min-width: 100vw;
+    padding-inline: 1.5rem;
+    justify-content: center;
+}
+
+@keyframes marquee-scroll {
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .marquee {
+        white-space: normal;
+    }
+
+    .marquee-track {
+        animation: none;
+        width: auto;
+    }
+
+    .marquee-item {
+        min-width: 0;
+        padding-block: 0.5rem;
+    }
+
+    .marquee-item[aria-hidden='true'] {
+        display: none;
+    }
+}
+
+/*
  * Responsive data tables: below `md` each row becomes a stacked card and
  * every cell needs a `data-label` attribute (its column header text).
  */

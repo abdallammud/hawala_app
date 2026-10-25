@@ -24,12 +24,15 @@
 
                 @foreach ($requests as $req)
                     <tr>
-                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $req->created_at->format('M j, Y') }}</td>
+                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $req->created_at->toLocal()->format('M j, Y') }}</td>
                         <td class="px-4 py-3 font-medium text-slate-900" data-label="{{ __('Kind') }}">{{ $req->kind->label() }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Amount') }}"><x-money :cents="$req->amount_cents" /></td>
                         <td class="px-4 py-3 text-slate-500" data-label="{{ __('Company account') }}">{{ $req->companyAccount?->name ?? '—' }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Status') }}">
                             <x-badge :color="$req->status->color()">{{ $req->status->label() }}</x-badge>
+                            @if ($req->approvals_required > 1 && $req->status->value === 'pending')
+                                <p class="mt-1 text-xs text-slate-500">{{ __(':given of :required approvals', ['given' => $req->approvals->count(), 'required' => $req->approvals_required]) }}</p>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-slate-500 text-sm" data-label="{{ __('Note') }}">{{ $req->note ?? '—' }}</td>
                     </tr>

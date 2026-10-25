@@ -35,12 +35,12 @@ class StoreTransferRequest extends FormRequest
             'sender_name' => ['required', 'string', 'max:255'],
             'sender_phone' => ['required', 'string', 'max:32'],
             'sender_country' => ['required', 'string', 'max:100'],
-            'sender_city' => ['required', 'string', 'max:100'],
+            'sender_city' => $this->cityRules('sender_country'),
             'sender_province' => ['nullable', 'string', 'max:100'],
             'receiver_name' => ['required', 'string', 'max:255'],
             'receiver_phone' => ['required', 'string', 'max:32'],
             'receiver_country' => ['required', 'string', 'max:100'],
-            'receiver_city' => ['required', 'string', 'max:100'],
+            'receiver_city' => $this->cityRules('receiver_country'),
             'receiver_province' => ['nullable', 'string', 'max:100'],
             'receiver_account_type_id' => ['nullable', Rule::exists('account_types', 'id')->where('is_active', true)],
             'receiver_account_number' => ['nullable', 'string', 'max:64'],
@@ -60,6 +60,15 @@ class StoreTransferRequest extends FormRequest
         ];
     }
 
+    /** The city has to be one of the active cities set up for the chosen country. */
+    private function cityRules(string $countryField): array
+    {
+        return [
+            'required', 'string', 'max:100',
+            Rule::exists('cities', 'name')->where('country', $this->input($countryField))->where('is_active', true),
+        ];
+    }
+
     public function mode(): QuoteMode
     {
         return QuoteMode::tryFrom($this->string('mode')->toString()) ?? QuoteMode::Receive;
@@ -76,6 +85,8 @@ class StoreTransferRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'sender_city.exists' => __('Pick a city from the list for the sender\'s country.'),
+            'receiver_city.exists' => __('Pick a city from the list for the receiver\'s country.'),
             'pay_amount.required_if' => __('Enter what the customer pays.'),
             'payout_amount.required_if' => __('Enter what the receiver gets.'),
         ];

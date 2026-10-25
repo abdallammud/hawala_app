@@ -32,7 +32,7 @@
                 @foreach ($branches as $branch)
                     <tr>
                         <td class="px-4 py-3 font-medium text-slate-900" data-label="{{ __('Name') }}">{{ $branch->name }}</td>
-                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('City') }}">{{ $branch->city }}</td>
+                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('City') }}">{{ $branch->city ?: "—" }}</td>
                         <td class="px-4 py-3 text-slate-500" data-label="{{ __('Type') }}">{{ $branch->is_payout_point ? __('Payout point') : __('Office') }}</td>
                         <td class="px-4 py-3 text-slate-500" data-label="{{ __('Users') }}">{{ $branch->users_count }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Status') }}">

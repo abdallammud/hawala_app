@@ -54,14 +54,14 @@ it('stamps the sending agent’s own branch on the transfer', function () {
 });
 
 it('offers only payout points as a destination', function () {
-    v11Office('Stockholm');
+    v11Office('Kista Office');
     $agent = H::sendingAgent();
 
-    $this->actingAs($agent)->get('/transfers/create')->assertOk()->assertDontSee('Stockholm');
+    $this->actingAs($agent)->get('/transfers/create')->assertOk()->assertDontSee('Kista Office');
 
     $this->actingAs($agent)->post('/transfers', [
         'idempotency_key' => (string) Str::uuid(),
-        'branch_id' => Branch::where('name', 'Stockholm')->first()->id,
+        'branch_id' => Branch::where('name', 'Kista Office')->first()->id,
         'sender_name' => 'A', 'sender_phone' => '1', 'receiver_name' => 'B', 'receiver_phone' => '2',
         'currency' => 'USD', 'payout_currency' => 'USD', 'mode' => 'receive', 'payout_amount' => '10',
         'confirm_duplicate' => '1',

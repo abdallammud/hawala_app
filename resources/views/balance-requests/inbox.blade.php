@@ -32,16 +32,24 @@
 
                 @foreach ($requests as $req)
                     <tr>
-                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $req->created_at->format('M j, Y') }}</td>
+                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $req->created_at->toLocal()->format('M j, Y') }}</td>
                         <td class="px-4 py-3 font-medium text-slate-900" data-label="{{ __('Beneficiary') }}">{{ $req->user->name }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Kind') }}">{{ $req->kind->label() }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Amount') }}"><x-money :cents="$req->amount_cents" /></td>
                         <td class="px-4 py-3 text-slate-500" data-label="{{ __('Requested by') }}">{{ $req->requestedBy->name }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Status') }}">
                             <x-badge :color="$req->status->color()">{{ $req->status->label() }}</x-badge>
+                            @if ($req->approvals_required > 1)
+                                <p class="mt-1 text-xs text-slate-500">
+                                    {{ __(':given of :required approvals', ['given' => $req->approvals->count(), 'required' => $req->approvals_required]) }}
+                                    @if ($req->approvals->isNotEmpty())
+                                        — {{ $req->approvals->pluck('user.name')->join(', ') }}
+                                    @endif
+                                </p>
+                            @endif
                         </td>
                         <td class="px-4 py-3 text-right space-x-3" data-label="">
-                            @if ($req->status->value === 'pending' && auth()->user()->can($req->kind->approvePermission()) && auth()->id() !== $req->requested_by)
+                            @if ($req->awaitingDecisionFrom(auth()->user()))
                                 @if ($req->kind->value === 'topup_paid')
                                     <button type="button" x-data x-on:click="$dispatch('open-modal', 'approve-{{ $req->id }}')" class="text-brand-600 hover:text-brand-700 font-medium text-sm">
                                         {{ __('Approve') }}
@@ -91,8 +99,10 @@
                                 </x-modal>
                             @else
                                 <span class="text-slate-400 text-sm">
-                                    @if ($req->decidedBy)
-                                        {{ $req->decided_at?->format('M j, Y') }} — {{ $req->decidedBy->name }}
+                                    @if ($req->status->value === 'pending' && $req->hasApprovalFrom(auth()->user()))
+                                        {{ __('You approved. Waiting for another person.') }}
+                                    @elseif ($req->decidedBy)
+                                        {{ $req->decided_at?->toLocal()->format('M j, Y') }} — {{ $req->decidedBy->name }}
                                     @endif
                                 </span>
                             @endif

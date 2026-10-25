@@ -88,7 +88,7 @@ it('sends nothing when the template is inactive', function () {
 it('logs one message per recipient when a transfer is sent', function () {
     Settings::set('sms.enabled', true);
 
-    // Seeded template targets sender + receiver.
+    // Seeded template targets the sender only; the receiver has their own.
     activate(SmsEvent::TransferSent);
 
     $agent = H::sendingAgent(fundCents: 500000);
@@ -99,16 +99,56 @@ it('logs one message per recipient when a transfer is sent', function () {
 
     $logs = SmsLog::all();
 
-    expect($logs)->toHaveCount(2)
-        ->and($logs->pluck('to')->all())->toEqualCanonicalizing([$transfer->sender_phone, $transfer->receiver_phone])
-        // The Somali receiver gets it; the gateway cannot reach the +46 sender.
-        ->and($logs->firstWhere('to', $transfer->receiver_phone)->status)->toBe(SmsStatus::Sent)
-        ->and($logs->firstWhere('to', $transfer->sender_phone)->status)->toBe(SmsStatus::Failed)
-        ->and($logs->firstWhere('to', $transfer->sender_phone)->provider_response)->toContain('not a valid Somali mobile number')
+    expect($logs)->toHaveCount(1)
+        ->and($logs->first()->to)->toBe($transfer->sender_phone)
         ->and($logs->first()->transfer_id)->toBe($transfer->id)
         ->and($logs->first()->event)->toBe(SmsEvent::TransferSent)
         ->and($logs->first()->body)->toContain($transfer->code)
         ->and($logs->first()->body)->toContain('$250.00');
+});
+
+it('tells the receiver money is waiting, with the tracker number', function () {
+    Settings::set('sms.enabled', true);
+    activate(SmsEvent::ReceiverWaiting);
+
+    $agent = H::sendingAgent(fundCents: 500000);
+
+    $transfer = app(TransferService::class)->create(
+        $agent, $this->branch, H::transferPayload(['amount_cents' => 25000]), (string) Str::uuid()
+    );
+
+    $log = SmsLog::where('event', SmsEvent::ReceiverWaiting)->sole();
+
+    expect($log->to)->toBe($transfer->receiver_phone)
+        ->and($log->status)->toBe(SmsStatus::Sent)
+        ->and($log->body)->toContain($transfer->code)
+        ->and($log->body)->toContain($transfer->sender_name)
+        ->and($log->body)->toContain('$250.00')
+        ->and($log->body)->not->toContain('{');
+});
+
+it('tells the sender when the payout agent has paid', function () {
+    Settings::set('sms.enabled', true);
+    activate(SmsEvent::SenderPaid);
+
+    $sender = H::sendingAgent(fundCents: 500000);
+    $payer = H::payoutAgent($this->branch);
+    $queue = app(PayoutQueueService::class);
+
+    $transfer = app(TransferService::class)->create(
+        $sender, $this->branch, H::transferPayload(['amount_cents' => 25000]), (string) Str::uuid()
+    );
+
+    expect(SmsLog::where('event', SmsEvent::SenderPaid)->count())->toBe(0);
+
+    $queue->markPaid($queue->claim($transfer, $payer), $payer, H::payoutAccountFor($payer));
+
+    $log = SmsLog::where('event', SmsEvent::SenderPaid)->sole();
+
+    expect($log->to)->toBe($transfer->sender_phone)
+        ->and($log->body)->toContain($transfer->receiver_name)
+        ->and($log->body)->toContain($transfer->code)
+        ->and($log->body)->not->toContain('{');
 });
 
 it('does not tell the receiver a held large transfer is on its way', function () {
@@ -128,7 +168,7 @@ it('does not tell the receiver a held large transfer is on its way', function ()
     // It fires once an admin releases it.
     app(TransferCancellationService::class)->approveLarge($transfer, makeAdmin());
 
-    expect(SmsLog::where('event', SmsEvent::TransferSent)->count())->toBe(2);
+    expect(SmsLog::where('event', SmsEvent::TransferSent)->count())->toBe(1);
 });
 
 it('messages the payout agent when a claim times out', function () {
@@ -170,7 +210,7 @@ it('records a failed send instead of breaking the money operation', function () 
     );
 
     expect($transfer->exists)->toBeTrue()
-        ->and(SmsLog::where('status', SmsStatus::Failed)->count())->toBe(2);
+        ->and(SmsLog::where('status', SmsStatus::Failed)->count())->toBe(1);
 });
 
 it('fails clearly when no provider has been selected', function () {

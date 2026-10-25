@@ -73,8 +73,21 @@ class TransferPolicy
         return $user->can('queue.claim')
             && ($transfer->sending_agent_id !== $user->id || Settings::get('payout.allow_self_claim', false))
             && $transfer->status === TransferStatus::Queued
-            && $user->branch_id !== null
-            && $transfer->branch_id === $user->branch_id;
+            && $this->mayPayInBranch($user, $transfer);
+    }
+
+    /**
+     * Agents only pay their own branch's transfers; an admin who can assign
+     * transfers to anyone (queue.force_assign) may also take one themself,
+     * wherever it is going.
+     */
+    private function mayPayInBranch(User $user, Transfer $transfer): bool
+    {
+        if ($user->can('queue.force_assign')) {
+            return true;
+        }
+
+        return $user->branch_id !== null && $transfer->branch_id === $user->branch_id;
     }
 
     public function markPaid(User $user, Transfer $transfer): bool
@@ -102,6 +115,14 @@ class TransferPolicy
         }
 
         return $user->can('queue.unassign') || $transfer->claimed_by === $user->id;
+    }
+
+    /** Admin override: drop the "uncollected" flag (e.g. ticked by mistake). */
+    public function clearUncollected(User $user, Transfer $transfer): bool
+    {
+        return $transfer->is_uncollected
+            && $transfer->fully_collected_at === null
+            && $user->can('transfers.clear_uncollected');
     }
 
     public function recordCollection(User $user, Transfer $transfer): bool

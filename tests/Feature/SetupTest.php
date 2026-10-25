@@ -32,6 +32,24 @@ it('lets an admin manage branches', function () {
     expect(Branch::query()->where('name', 'Bosaso')->exists())->toBeTrue();
 });
 
+it('creates and edits a branch without a city', function () {
+    $admin = makeAdmin();
+
+    $this->actingAs($admin)->post('/setup/branches', ['name' => 'Garowe', 'city' => ''])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/setup/branches');
+
+    $branch = Branch::query()->where('name', 'Garowe')->firstOrFail();
+    expect($branch->city)->toBeNull();
+
+    $this->actingAs($admin)->get('/setup/branches')->assertOk()->assertSee('Garowe');
+
+    $this->actingAs($admin)->put("/setup/branches/{$branch->id}", ['name' => 'Garowe', 'is_payout_point' => 1])
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($admin)->post('/setup/branches', ['name' => ''])->assertSessionHasErrors('name');
+});
+
 it('rejects a duplicate branch name', function () {
     $admin = makeAdmin();
     $existing = Branch::query()->first();

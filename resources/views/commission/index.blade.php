@@ -40,7 +40,7 @@
 
                 @foreach ($history as $req)
                     <tr>
-                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $req->created_at->format('M j, Y') }}</td>
+                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $req->created_at->toLocal()->format('M j, Y') }}</td>
                         <td class="px-4 py-3 font-medium text-slate-900" data-label="{{ __('Kind') }}">{{ $req->kind->label() }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Amount') }}"><x-money :cents="$req->amount_cents" /></td>
                         <td class="px-4 py-3" data-label="{{ __('Status') }}">

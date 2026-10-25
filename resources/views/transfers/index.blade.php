@@ -48,7 +48,7 @@
                                 <x-badge color="amber" class="ml-1">{{ __('Uncollected') }}</x-badge>
                             @endif
                         </td>
-                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $transfer->created_at->format('M j, Y') }}</td>
+                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $transfer->created_at->toLocal()->format('M j, Y') }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Receiver') }}">
                             <div class="text-slate-900">{{ $transfer->receiver_name }}</div>
                             <div class="text-xs text-slate-500">{{ $transfer->receiver_phone }}</div>

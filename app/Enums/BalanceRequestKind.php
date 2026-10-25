@@ -3,6 +3,7 @@
 namespace App\Enums;
 
 use App\Models\User;
+use App\Support\Settings;
 
 enum BalanceRequestKind: string
 {
@@ -37,6 +38,18 @@ enum BalanceRequestKind: string
             self::PayoutFunding, self::PayoutReturn => 'balances.fund_payout',
             self::CommissionMove => 'commission.approve_move',
             self::CommissionWithdraw => 'commission.approve_withdraw',
+        };
+    }
+
+    /**
+     * How many different approvers it takes. Credit is money lent on trust, so it
+     * is never fewer than two, whatever the setting says.
+     */
+    public function approvalsRequired(): int
+    {
+        return match ($this) {
+            self::TopupCredit => max(2, (int) Settings::get('credit.approvals_required', 2)),
+            default => 1,
         };
     }
 

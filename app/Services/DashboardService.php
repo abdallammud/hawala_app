@@ -14,6 +14,7 @@ use App\Models\ExchangeRate;
 use App\Models\LedgerAccount;
 use App\Models\Transfer;
 use App\Models\User;
+use App\Support\LocalTime;
 
 /**
  * The per-role dashboard figures from BUILD.md §11.
@@ -24,7 +25,7 @@ class DashboardService
     {
         $today = Transfer::query()
             ->where('sending_agent_id', $agent->id)
-            ->whereDate('created_at', today())
+            ->whereBetween('created_at', LocalTime::todayRange())
             ->get();
 
         return [
@@ -68,14 +69,14 @@ class DashboardService
                 ->get(),
             'paid_today' => Transfer::query()
                 ->where('paid_by', $agent->id)
-                ->whereDate('paid_at', today())
+                ->whereBetween('paid_at', LocalTime::todayRange())
                 ->count(),
         ];
     }
 
     public function forAdmin(): array
     {
-        $todayTransfers = Transfer::query()->whereDate('created_at', today())->get();
+        $todayTransfers = Transfer::query()->whereBetween('created_at', LocalTime::todayRange())->get();
 
         // "Money available in Somalia" = Somali company accounts plus every
         // payout agent's float (BUILD.md §11).
@@ -106,10 +107,10 @@ class DashboardService
             'pending_balance_requests' => BalanceRequest::query()->where('status', BalanceRequestStatus::Pending)->count(),
             'pending_cancellations' => CancellationRequest::query()->where('status', CancellationRequestStatus::Pending)->count(),
             'awaiting_approval' => Transfer::query()->where('status', TransferStatus::AwaitingApproval)->count(),
-            'expired_today' => ClaimExpiry::query()->whereDate('expired_at', today())->count(),
+            'expired_today' => ClaimExpiry::query()->whereBetween('expired_at', LocalTime::todayRange())->count(),
             'large_this_month' => Transfer::query()
                 ->where('is_large', true)
-                ->where('created_at', '>=', now()->startOfMonth())
+                ->where('created_at', '>=', LocalTime::monthStart())
                 ->count(),
             'uncollected_total' => (int) Transfer::query()
                 ->where('is_uncollected', true)

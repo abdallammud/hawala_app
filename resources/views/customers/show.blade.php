@@ -22,7 +22,7 @@
                     <x-button :href="route('customers.edit', $customer)" variant="secondary" size="sm">{{ __('Edit') }}</x-button>
                 @endcan
                 @can('reports.customers')
-                    <x-button :href="route('reports.show', ['report' => 'customer-statement', 'customer_id' => $customer->id, 'from' => '2000-01-01', 'to' => today()->toDateString()])" variant="secondary" size="sm">
+                    <x-button :href="route('reports.show', ['report' => 'customer-statement', 'customer_id' => $customer->id, 'from' => '2000-01-01', 'to' => \App\Support\LocalTime::now()->toDateString()])" variant="secondary" size="sm">
                         {{ __('Statement report') }}
                     </x-button>
                 @endcan
@@ -56,7 +56,7 @@
                         <td class="px-4 py-3" data-label="{{ __('Tracking number') }}">
                             <a href="{{ route('transfers.show', $transfer) }}" class="font-medium text-slate-900 hover:text-brand-600">{{ $transfer->code }}</a>
                         </td>
-                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $transfer->created_at->format('Y-m-d') }}</td>
+                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $transfer->created_at->toLocal()->format('Y-m-d') }}</td>
                         <td class="px-4 py-3 text-slate-600" data-label="{{ __('Receiver') }}">
                             {{ $transfer->receiver_name }}
                             @if ($transfer->receiver_city)

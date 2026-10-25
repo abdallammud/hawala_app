@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Expenses;
 
 use App\Models\Expense;
+use App\Support\LocalTime;
 use App\Support\Money;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -22,7 +23,7 @@ class StoreExpenseRequest extends FormRequest
             'company_account_id' => ['required', Rule::exists('company_accounts', 'id')->where('is_active', true)],
             'currency' => ['required', Rule::exists('currencies', 'code')->where('is_active', true)],
             'amount' => ['required', 'numeric', 'min:0.01', 'max:1000000000'],
-            'expense_date' => ['required', 'date', 'before_or_equal:today'],
+            'expense_date' => ['required', 'date', 'before_or_equal:'.LocalTime::now()->toDateString()],
             'payee' => ['nullable', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],

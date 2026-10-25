@@ -5,6 +5,7 @@ namespace App\Reports;
 use App\Enums\ExpenseStatus;
 use App\Models\Expense;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
 /**
@@ -137,8 +138,8 @@ class ExpensesReport extends Report
                 fn ($q) => $q->where('status', $status),
             )
             // Half-open on the day after, so a date stored with a time part still counts on the last day.
-            ->where('expense_date', '>=', $filters->from->toDateString())
-            ->where('expense_date', '<', $filters->to->addDay()->toDateString())
+            ->where('expense_date', '>=', $filters->fromDate())
+            ->where('expense_date', '<', Carbon::parse($filters->toDate())->addDay()->toDateString())
             ->when($filters->branchId, fn ($q) => $q->where('branch_id', $filters->branchId))
             ->when($filters->expenseTypeId, fn ($q) => $q->where('expense_type_id', $filters->expenseTypeId));
     }

@@ -13,6 +13,7 @@ use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\Setup\AccountTypesController;
 use App\Http\Controllers\Setup\BranchesController;
+use App\Http\Controllers\Setup\CitiesController;
 use App\Http\Controllers\Setup\CurrenciesController;
 use App\Http\Controllers\Setup\EmailLogController;
 use App\Http\Controllers\Setup\EmailSettingsController;
@@ -92,6 +93,15 @@ Route::middleware('auth')->group(function () {
         Route::post('/{accountType}/toggle', [AccountTypesController::class, 'toggle'])->name('toggle');
     });
 
+    Route::prefix('setup/cities')->middleware('can:setup.cities')->name('setup.cities.')->group(function () {
+        Route::get('/', [CitiesController::class, 'index'])->name('index');
+        Route::get('/create', [CitiesController::class, 'create'])->name('create');
+        Route::post('/', [CitiesController::class, 'store'])->name('store');
+        Route::get('/{city}/edit', [CitiesController::class, 'edit'])->name('edit');
+        Route::put('/{city}', [CitiesController::class, 'update'])->name('update');
+        Route::post('/{city}/toggle', [CitiesController::class, 'toggle'])->name('toggle');
+    });
+
     Route::prefix('setup/currencies')->middleware('can:setup.currencies')->name('setup.currencies.')->group(function () {
         Route::get('/', [CurrenciesController::class, 'index'])->name('index');
         Route::put('/{currency}', [CurrenciesController::class, 'update'])->name('update');
@@ -167,6 +177,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/transfers/{transfer}/approve-large', [TransfersController::class, 'approveLarge'])->name('transfers.approve-large');
     Route::post('/transfers/{transfer}/reject-large', [TransfersController::class, 'rejectLarge'])->name('transfers.reject-large');
     Route::post('/transfers/{transfer}/collections', [TransfersController::class, 'recordCollection'])->name('transfers.collections.store');
+    Route::post('/transfers/{transfer}/clear-uncollected', [TransfersController::class, 'clearUncollected'])
+        ->middleware('can:transfers.clear_uncollected')->name('transfers.clear-uncollected');
 
     // --- Customers -------------------------------------------------------------
     // Static segments (search) before the {customer} wildcard.
@@ -290,6 +302,7 @@ Route::middleware('auth')->group(function () {
 
     // --- Notifications -------------------------------------------------------
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/poll', [NotificationsController::class, 'poll'])->name('notifications.poll');
     Route::post('/notifications/read', [NotificationsController::class, 'markRead'])->name('notifications.read');
 
     // --- Reports -------------------------------------------------------------

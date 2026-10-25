@@ -26,7 +26,7 @@ class ReportLink
         }
 
         if ($allTime) {
-            $params = ['from' => '2000-01-01', 'to' => today()->toDateString()] + $params;
+            $params = ['from' => '2000-01-01', 'to' => LocalTime::now()->toDateString()] + $params;
         }
 
         return route('reports.show', ['report' => $key] + $params);
@@ -34,6 +34,6 @@ class ReportLink
 
     public static function today(string $key, array $params = []): ?string
     {
-        return self::to($key, ['from' => today()->toDateString(), 'to' => today()->toDateString()] + $params);
+        return self::to($key, ['from' => LocalTime::now()->toDateString(), 'to' => LocalTime::now()->toDateString()] + $params);
     }
 }

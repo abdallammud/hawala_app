@@ -76,7 +76,7 @@ class CustomerStatementReport extends Report
             ->oldest()
             ->get()
             ->map(fn (Transfer $t) => [
-                'date' => $t->created_at->format('Y-m-d H:i'),
+                'date' => $t->created_at->toLocal()->format('Y-m-d H:i'),
                 'code' => $t->code,
                 'receiver' => $t->receiver_name.' ('.$t->receiver_phone.')',
                 'destination' => collect([$t->receiver_city, $t->receiver_province, $t->receiver_country])->filter()->implode(', ') ?: '—',

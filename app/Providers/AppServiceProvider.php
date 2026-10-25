@@ -4,6 +4,10 @@ namespace App\Providers;
 
 use App\Models\Expense;
 use App\Models\User;
+use App\Support\LocalTime;
+use Carbon\Carbon as BaseCarbon;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -22,6 +26,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Stored in UTC, shown in the company timezone: `$date->toLocal()->format(...)`.
+        $toLocal = fn () => LocalTime::convert($this);
+        BaseCarbon::macro('toLocal', $toLocal);
+        Carbon::macro('toLocal', $toLocal);
+        CarbonImmutable::macro('toLocal', $toLocal);
+
         // A super-admin passes every permission check. The exception is a check
         // about one particular expense: its rules are about state and ownership
         // (only a pending expense is editable, you cannot approve your own),

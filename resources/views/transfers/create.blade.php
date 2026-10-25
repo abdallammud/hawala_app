@@ -183,7 +183,7 @@
                         <x-input name="sender_name" label="{{ __('Name') }}" :value="$prefill?->name" autofocus />
                         <x-input name="sender_phone" label="{{ __('Phone') }}" :value="$prefill?->phone" />
                         <x-searchable-select name="sender_country" label="{{ __('Country') }}" :options="$countries" :value="$prefill?->country ?? $senderDefaults['country']" />
-                        <x-input name="sender_city" label="{{ __('City') }}" :value="$prefill?->city ?? $senderDefaults['city']" />
+                        <x-searchable-select name="sender_city" label="{{ __('City') }}" depends-on="sender_country" :by-parent="$citiesByCountry" :parent-value="$prefill?->country ?? $senderDefaults['country']" :value="$prefill?->city ?? $senderDefaults['city']" />
                         <x-input name="sender_province" label="{{ __('Province / region') }}" :value="$prefill?->province ?? $senderDefaults['province']" hint="{{ __('Optional') }}" />
                     </div>
                 </fieldset>
@@ -197,7 +197,7 @@
                         <x-input name="receiver_name" :value="$prefillReceiver['receiver_name'] ?? null" label="{{ __('Name') }}" />
                         <x-input name="receiver_phone" :value="$prefillReceiver['receiver_phone'] ?? null" label="{{ __('Phone') }}" />
                         <x-searchable-select name="receiver_country" label="{{ __('Country') }}" :options="$countries" :value="$prefillReceiver['receiver_country'] ?? 'Somalia'" />
-                        <x-input name="receiver_city" :value="$prefillReceiver['receiver_city'] ?? null" label="{{ __('City') }}" />
+                        <x-searchable-select name="receiver_city" label="{{ __('City') }}" depends-on="receiver_country" :by-parent="$citiesByCountry" :parent-value="$prefillReceiver['receiver_country'] ?? 'Somalia'" :value="$prefillReceiver['receiver_city'] ?? null" />
                         <x-input name="receiver_province" :value="$prefillReceiver['receiver_province'] ?? null" label="{{ __('Province / region') }}" hint="{{ __('Optional') }}" />
                     </div>
                 </fieldset>

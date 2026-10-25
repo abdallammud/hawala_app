@@ -103,7 +103,7 @@ class AgentStatementReport extends Report
             ->sum($signed);
 
         $rows = collect([[
-            'date' => $filters->from->format('Y-m-d'),
+            'date' => $filters->fromDate(),
             'type' => __('Opening balance'),
             'memo' => '',
             'amount' => 0,
@@ -124,7 +124,7 @@ class AgentStatementReport extends Report
                 $running += $amount;
 
                 $rows->push([
-                    'date' => $line->created_at->format('Y-m-d H:i'),
+                    'date' => $line->created_at->toLocal()->format('Y-m-d H:i'),
                     'type' => str($line->journalEntry->type->value)->replace('_', ' ')->title()->toString(),
                     'memo' => $line->journalEntry->memo ?? '',
                     'amount' => $amount,
@@ -133,7 +133,7 @@ class AgentStatementReport extends Report
             });
 
         $rows->push([
-            'date' => $filters->to->format('Y-m-d'),
+            'date' => $filters->toDate(),
             'type' => __('Closing balance'),
             'memo' => '',
             'amount' => 0,

@@ -3,6 +3,7 @@
 namespace App\Services\Email;
 
 use App\Enums\EmailEvent;
+use App\Support\LocalTime;
 use App\Support\Settings;
 
 /**
@@ -71,7 +72,7 @@ class EmailTemplateRenderer
             'branch' => 'Mogadishu',
             'agent_name' => 'Ali Hassan',
             'payout_agent_name' => 'Farah Omar',
-            'date' => now()->format('Y-m-d H:i'),
+            'date' => LocalTime::now()->format('Y-m-d H:i'),
             'status' => 'Queued',
             'reason' => 'Customer changed their mind',
             'kind' => 'Top-up (paid)',

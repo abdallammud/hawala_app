@@ -145,6 +145,7 @@ class TransferService
         // must not tell the receiver their money has been sent.
         if ($transfer->status === TransferStatus::Queued) {
             SendTemplatedSms::dispatch(SmsEvent::TransferSent, $transfer->id);
+            SendTemplatedSms::dispatch(SmsEvent::ReceiverWaiting, $transfer->id);
             app(EmailNotifier::class)->transferSent($transfer);
         }
 

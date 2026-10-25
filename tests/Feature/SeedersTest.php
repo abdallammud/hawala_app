@@ -47,7 +47,7 @@ describe('ProductionSeeder', function () {
         expect(Currency::count())->toBe(7)
             ->and(AccountType::count())->toBe(7)
             ->and(FeeTier::count())->toBe(2)
-            ->and(SmsTemplate::count())->toBe(6)
+            ->and(SmsTemplate::count())->toBe(8)
             // Nothing sends on a fresh install.
             ->and(SmsTemplate::where('is_active', true)->count())->toBe(0)
             ->and(Settings::get('sms.enabled'))->toBeFalse();

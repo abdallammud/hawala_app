@@ -2,6 +2,7 @@
 
 namespace App\Reports;
 
+use App\Support\LocalTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
  */
 class ReportFilters
 {
+    /** `from` / `to` are UTC instants (local day start / end), ready for whereBetween on UTC columns. */
     public function __construct(
         public readonly CarbonImmutable $from,
         public readonly CarbonImmutable $to,
@@ -27,12 +29,12 @@ class ReportFilters
     {
         // Default to the current month — the range a manager asks for most.
         $from = $request->filled('from')
-            ? CarbonImmutable::parse($request->string('from')->toString())->startOfDay()
-            : CarbonImmutable::now()->startOfMonth();
+            ? LocalTime::dayStart($request->string('from')->toString())
+            : LocalTime::monthStart();
 
         $to = $request->filled('to')
-            ? CarbonImmutable::parse($request->string('to')->toString())->endOfDay()
-            : CarbonImmutable::now()->endOfDay();
+            ? LocalTime::dayEnd($request->string('to')->toString())
+            : LocalTime::dayEnd(LocalTime::now()->toDateString());
 
         return new self(
             from: $from,
@@ -47,11 +49,23 @@ class ReportFilters
         );
     }
 
+    /** The first day of the range, as the user typed it (company timezone). */
+    public function fromDate(): string
+    {
+        return LocalTime::convert($this->from)->toDateString();
+    }
+
+    /** The last day of the range, as the user typed it (company timezone). */
+    public function toDate(): string
+    {
+        return LocalTime::convert($this->to)->toDateString();
+    }
+
     public function toQueryString(): array
     {
         return array_filter([
-            'from' => $this->from->toDateString(),
-            'to' => $this->to->toDateString(),
+            'from' => $this->fromDate(),
+            'to' => $this->toDate(),
             'branch_id' => $this->branchId,
             'agent_id' => $this->agentId,
             'status' => $this->status,

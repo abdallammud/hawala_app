@@ -55,6 +55,9 @@
             <div class="max-w-xs">
                 <x-input name="credit_default_max" label="{{ __('Default max credit ($)') }}" type="number" min="0" step="0.01" prefix="$" :value="$settings['credit']['default_max_cents'] !== null ? $settings['credit']['default_max_cents'] / 100 : null" hint="{{ __('Leave blank for no limit.') }}" />
             </div>
+            <div class="max-w-xs mt-4">
+                <x-input name="credit_approvals_required" label="{{ __('Approvals needed for a credit top-up') }}" type="number" min="2" max="5" step="1" :value="old('credit_approvals_required', max(2, (int) ($settings['credit']['approvals_required'] ?? 2)))" hint="{{ __('Different people who must approve. At least 2. Requests already waiting keep their number.') }}" />
+            </div>
         </x-card>
 
         <x-card :title="__('SMS')" :subtitle="__('Nothing is sent until this is on and the individual template is active.')">
@@ -171,6 +174,16 @@
 
         <x-card :title="__('Receipts')">
             <x-checkbox name="receipts_enabled" label="{{ __('Enable transfer receipt PDFs') }}" :checked="$settings['receipts']['enabled']" />
+        </x-card>
+
+        <x-card :title="__('Agent banners')">
+            <div class="space-y-5">
+                <x-checkbox name="banners_transfer_reminder" label="{{ __('Remind sending agents to check their transfers (links to the transfers list)') }}" :checked="$settings['banners']['transfer_reminder']" />
+                <x-checkbox name="banners_new_destination" label="{{ __('Tell sending agents when they can send to a new place') }}" :checked="$settings['banners']['new_destination']" />
+                <div class="max-w-xs">
+                    <x-input name="banners_new_destination_days" label="{{ __('Show the new-place notice for (days)') }}" type="number" min="1" max="90" :value="$settings['banners']['new_destination_days']" />
+                </div>
+            </div>
         </x-card>
 
         <x-card :title="__('Security')">

@@ -71,7 +71,7 @@ class UncollectedReport extends Report
             ->get()
             ->map(fn (Transfer $t) => [
                 'code' => $t->code,
-                'date' => $t->created_at->format('Y-m-d'),
+                'date' => $t->created_at->toLocal()->format('Y-m-d'),
                 'agent' => $t->sendingAgent->name,
                 'customer' => $t->sender_name,
                 'phone' => $t->sender_phone,

@@ -9,7 +9,7 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <x-select name="expense_type_id" label="{{ __('Expense type') }}" :options="$types" placeholder="{{ __('Choose a type') }}" />
-                    <x-input name="expense_date" label="{{ __('Date') }}" type="date" :value="today()->toDateString()" max="{{ today()->toDateString() }}" />
+                    <x-input name="expense_date" label="{{ __('Date') }}" type="date" :value="\App\Support\LocalTime::now()->toDateString()" max="{{ \App\Support\LocalTime::now()->toDateString() }}" />
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">

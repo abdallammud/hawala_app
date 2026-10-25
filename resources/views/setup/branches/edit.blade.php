@@ -6,7 +6,7 @@
                 @method('PUT')
 
                 <x-input name="name" label="{{ __('Name') }}" :value="$branch->name" />
-                <x-input name="city" label="{{ __('City') }}" :value="$branch->city" />
+                <x-input name="city" label="{{ __('City (optional)') }}" :value="$branch->city" />
                 <x-checkbox name="is_payout_point" :checked="$branch->is_payout_point" label="{{ __('Pays out transfers (offered as a destination)') }}" />
 
                 <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 [&>*]:w-full sm:[&>*]:w-auto">

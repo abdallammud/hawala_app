@@ -7,17 +7,21 @@ use App\Enums\BalanceRequestStatus;
 use App\Enums\JournalType;
 use App\Enums\LedgerAccountType;
 use App\Enums\SmsEvent;
+use App\Exceptions\Balances\AlreadyApprovedException;
 use App\Exceptions\Balances\MaxCreditExceededException;
 use App\Exceptions\Balances\SelfApprovalException;
 use App\Jobs\SendTemplatedSms;
 use App\Models\BalanceRequest;
 use App\Models\CompanyAccount;
 use App\Models\JournalEntry;
+use App\Models\LedgerAccount;
 use App\Models\User;
+use App\Notifications\BalanceRequestApprovalRecorded;
 use App\Notifications\BalanceRequestDecided;
 use App\Notifications\BalanceRequestSubmitted;
 use App\Services\Email\EmailNotifier;
 use App\Services\Ledger\LedgerService;
+use App\Support\LocalTime;
 use App\Support\Money;
 use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
@@ -38,11 +42,38 @@ class BalanceRequestService
     ): BalanceRequest {
         $request = $this->createRow($kind, $beneficiary, $amountCents, $requestedBy, $companyAccount, $note);
 
-        User::permission($kind->approvePermission())
-            ->where('id', '!=', $requestedBy->id)
-            ->each(fn (User $approver) => $approver->notify(new BalanceRequestSubmitted($request)));
+        $this->notifyApprovers($request);
 
         return $request;
+    }
+
+    private function notifyApprovers(BalanceRequest $request): void
+    {
+        User::permission($request->kind->approvePermission())
+            ->where('id', '!=', $request->requested_by)
+            ->each(fn (User $approver) => $approver->notify(new BalanceRequestSubmitted($request)));
+    }
+
+    /** Tell the approvers who still have to act that one approval is in. */
+    private function notifyProgress(BalanceRequest $request, User $approver): void
+    {
+        $given = $request->approvals()->count();
+        $done = $request->approvals()->pluck('user_id')->all();
+
+        User::permission($request->kind->approvePermission())
+            ->whereNotIn('id', [...$done, $request->requested_by, $request->user_id])
+            ->each(fn (User $other) => $other->notify(new BalanceRequestApprovalRecorded($request, $approver, $given)));
+    }
+
+    private function guardApprover(BalanceRequest $request, User $approver): void
+    {
+        if ($approver->id === $request->requested_by) {
+            throw new SelfApprovalException;
+        }
+
+        if ($request->approvals_required > 1 && $approver->id === $request->user_id) {
+            throw new SelfApprovalException;
+        }
     }
 
     private function createRow(
@@ -61,38 +92,74 @@ class BalanceRequestService
             'original_amount_cents' => $amountCents,
             'company_account_id' => $companyAccount?->id,
             'status' => BalanceRequestStatus::Pending,
+            'approvals_required' => $kind->approvalsRequired(),
             'requested_by' => $requestedBy->id,
             'note' => $note,
         ]);
     }
 
-    /** Approve a pending request. Maker ≠ checker: the approver can't be who requested it. */
+    /**
+     * Add one approval. The request posts to the ledger only when it has the
+     * number it needs (credit top-ups: two different people). Maker ≠ checker:
+     * the requester can't approve, and neither can the beneficiary of a
+     * multi-approval request. The same person can't approve twice.
+     */
     public function approve(BalanceRequest $request, User $approver, ?string $note = null): BalanceRequest
     {
-        $this->guardPending($request);
+        $final = DB::transaction(function () use ($request, $approver, $note) {
+            $locked = BalanceRequest::query()->lockForUpdate()->findOrFail($request->id);
 
-        if ($approver->id === $request->requested_by) {
-            throw new SelfApprovalException;
+            $this->guardPending($locked);
+            $this->guardApprover($locked, $approver);
+
+            if ($locked->approvals()->where('user_id', $approver->id)->exists()) {
+                throw new AlreadyApprovedException;
+            }
+
+            if ($locked->kind === BalanceRequestKind::TopupCredit) {
+                $this->assertWithinCreditLimit($locked->user, $locked->amount_cents);
+            }
+
+            $locked->approvals()->create(['user_id' => $approver->id, 'note' => $note]);
+
+            if ($locked->approvals()->count() < $locked->approvals_required) {
+                return false;
+            }
+
+            $this->postApproved($locked, $approver, $note);
+
+            return true;
+        });
+
+        $request->refresh();
+
+        if ($final) {
+            $this->afterApproved($request);
+        } else {
+            $this->notifyProgress($request, $approver);
         }
 
-        return $this->finalizeApproval($request, $approver, $note);
+        return $request;
     }
 
+    /** One rejection ends the request, however many approvals it already has. */
     public function reject(BalanceRequest $request, User $approver, string $reason): BalanceRequest
     {
-        $this->guardPending($request);
+        DB::transaction(function () use ($request, $approver, $reason) {
+            $locked = BalanceRequest::query()->lockForUpdate()->findOrFail($request->id);
 
-        if ($approver->id === $request->requested_by) {
-            throw new SelfApprovalException;
-        }
+            $this->guardPending($locked);
+            $this->guardApprover($locked, $approver);
 
-        $request->update([
-            'status' => BalanceRequestStatus::Rejected,
-            'decided_by' => $approver->id,
-            'decided_at' => now(),
-            'note' => $reason,
-        ]);
+            $locked->update([
+                'status' => BalanceRequestStatus::Rejected,
+                'decided_by' => $approver->id,
+                'decided_at' => now(),
+                'note' => $reason,
+            ]);
+        });
 
+        $request->refresh();
         $this->notifyDecision($request);
 
         return $request;
@@ -103,6 +170,9 @@ class BalanceRequestService
      * approve in one step. Only valid when the acting user is not the
      * beneficiary (BUILD.md §9) — that's the safety check here, not
      * requested_by !== decided_by, since both legitimately equal the admin.
+     *
+     * A kind that needs more than one approval (credit) is never finished in
+     * one step: the admin's entry is only the request, and others must approve.
      */
     public function actDirectly(
         BalanceRequestKind $kind,
@@ -117,6 +187,12 @@ class BalanceRequestService
         }
 
         $request = $this->createRow($kind, $beneficiary, $amountCents, $actingUser, $companyAccount, $note);
+
+        if ($request->approvals_required > 1) {
+            $this->notifyApprovers($request);
+
+            return $request;
+        }
 
         return $this->finalizeApproval($request, $actingUser, $note);
     }
@@ -139,23 +215,36 @@ class BalanceRequestService
         }
     }
 
+    /** Single-step finish (admin on behalf, instant commission move). */
     private function finalizeApproval(BalanceRequest $request, User $decider, ?string $note): BalanceRequest
     {
-        $approved = DB::transaction(function () use ($request, $decider, $note) {
-            $entry = $this->postLedgerEntry($request, $decider);
-
-            $request->update([
-                'status' => BalanceRequestStatus::Approved,
-                'decided_by' => $decider->id,
-                'decided_at' => now(),
-                'journal_entry_id' => $entry->id,
-                'note' => $note ?? $request->note,
-            ]);
-
-            $this->notifyDecision($request);
-
-            return $request;
+        DB::transaction(function () use ($request, $decider, $note) {
+            $request->approvals()->create(['user_id' => $decider->id, 'note' => $note]);
+            $this->postApproved($request, $decider, $note);
         });
+
+        $this->afterApproved($request);
+
+        return $request;
+    }
+
+    /** Post the ledger entry and mark approved. Runs inside the caller's transaction. */
+    private function postApproved(BalanceRequest $request, User $decider, ?string $note): void
+    {
+        $entry = $this->postLedgerEntry($request, $decider);
+
+        $request->update([
+            'status' => BalanceRequestStatus::Approved,
+            'decided_by' => $decider->id,
+            'decided_at' => now(),
+            'journal_entry_id' => $entry->id,
+            'note' => $note ?? $request->note,
+        ]);
+    }
+
+    private function afterApproved(BalanceRequest $approved): void
+    {
+        $this->notifyDecision($approved);
 
         // Only a balance top-up is worth an SMS; commission moves and
         // withdrawals are agent-side bookkeeping.
@@ -167,13 +256,11 @@ class BalanceRequestService
                 extraValues: [
                     'agent_name' => $approved->user->name,
                     'amount_usd' => Money::format($approved->amount_cents),
-                    'date' => now()->format('Y-m-d H:i'),
+                    'date' => LocalTime::now()->format('Y-m-d H:i'),
                 ],
                 overrideRecipients: array_filter([$approved->user->phone]),
             );
         }
-
-        return $approved;
     }
 
     private function notifyDecision(BalanceRequest $request): void
@@ -264,12 +351,7 @@ class BalanceRequestService
      */
     private function postTopupCredit(BalanceRequest $request, User $beneficiary, int $amount, User $decider): JournalEntry
     {
-        $creditAccount = $this->ledger->accountFor($beneficiary, LedgerAccountType::AgentCredit);
-        $maxCents = $beneficiary->max_credit_cents ?? Settings::get('credit.default_max_cents');
-
-        if ($maxCents !== null && $creditAccount->balance_cents + $amount > $maxCents) {
-            throw MaxCreditExceededException::forUser($creditAccount->balance_cents, $amount, $maxCents);
-        }
+        $creditAccount = $this->assertWithinCreditLimit($beneficiary, $amount);
 
         return $this->ledger->post(
             JournalType::TopupCredit,
@@ -280,5 +362,18 @@ class BalanceRequestService
             $request,
             $decider
         );
+    }
+
+    /** Throws if the credit would pass the limit; returns the credit account it checked. */
+    private function assertWithinCreditLimit(User $beneficiary, int $amount): LedgerAccount
+    {
+        $creditAccount = $this->ledger->accountFor($beneficiary, LedgerAccountType::AgentCredit);
+        $maxCents = $beneficiary->max_credit_cents ?? Settings::get('credit.default_max_cents');
+
+        if ($maxCents !== null && $creditAccount->balance_cents + $amount > $maxCents) {
+            throw MaxCreditExceededException::forUser($creditAccount->balance_cents, $amount, $maxCents);
+        }
+
+        return $creditAccount;
     }
 }

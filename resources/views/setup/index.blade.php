@@ -13,6 +13,12 @@
             </x-card>
         @endcan
 
+        @can('setup.cities')
+            <x-card :title="__('Cities')" :subtitle="__('The cities agents can pick for each country.')">
+                <x-button :href="route('setup.cities.index')" variant="secondary" size="sm">{{ __('Manage') }}</x-button>
+            </x-card>
+        @endcan
+
         @can('setup.roles')
             <x-card :title="__('Roles')" :subtitle="__('Roles and their permissions.')">
                 <x-button :href="route('roles.index')" variant="secondary" size="sm">{{ __('Manage') }}</x-button>

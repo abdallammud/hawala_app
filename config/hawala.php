@@ -35,6 +35,8 @@ return [
 
     'credit' => [
         'default_max_cents' => null, // null = no limit
+        // Different people who must approve a credit top-up. Never below 2.
+        'approvals_required' => 2,
     ],
 
     'sms' => [
@@ -72,6 +74,15 @@ return [
 
     'receipts' => [
         'enabled' => true,
+    ],
+
+    // Scrolling notices for sending agents, under the topbar.
+    'banners' => [
+        // "Check your transfers" — links to the transfers list.
+        'transfer_reminder' => true,
+        // "You can now send money to …" — plain text, shown for this many days.
+        'new_destination' => true,
+        'new_destination_days' => 7,
     ],
 
     // Suggestions for the country boxes on the transfer form. Free text is

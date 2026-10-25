@@ -154,6 +154,7 @@ class PayoutQueueService
         });
 
         SendTemplatedSms::dispatch(SmsEvent::TransferPaid, $paid->id);
+        SendTemplatedSms::dispatch(SmsEvent::SenderPaid, $paid->id);
         app(EmailNotifier::class)->transferPaid($paid);
 
         return $paid;

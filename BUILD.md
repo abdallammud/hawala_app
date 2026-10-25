@@ -920,3 +920,15 @@ destination branch; extra email events = expense approval, cancelled, top-up app
 - Not included: emails to customers (their email is not captured); an email when an admin force-assigns a transfer
 - Needs the real Gmail address + app password to prove the live connection (everything else is tested, including a
   real SMTP conversation against a local sink)
+
+### v1.2 phase 5 — Two approvals for credit top-ups
+- [x] A `topup_credit` request needs **2 different approvers** (`balance_requests.approvals_required`, snapshotted when
+      the request is created; setting `credit.approvals_required`, default 2, never below 2) — table
+      `balance_request_approvals`, unique per (request, user)
+- [x] Requester and beneficiary can't approve; nobody approves twice; one rejection ends the request; the ledger posts
+      only on the last approval (inside a row lock); the max-credit check runs at every approval and again at posting
+- [x] Admin "record on behalf" no longer posts credit instantly — it creates the request and others approve (needs
+      at least 2 other people with `balances.give_credit`)
+- [x] Inbox and My Requests show "1 of 2 approvals"; first approval notifies the remaining approvers; the agent's
+      notification / email / SMS go out only after the final approval
+- Other kinds (paid top-up, repayment, payout funding, commission) are unchanged: one approval

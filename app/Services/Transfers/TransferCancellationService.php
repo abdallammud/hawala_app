@@ -161,6 +161,7 @@ class TransferCancellationService
         // Held transfers skip the transfer_sent SMS at creation; it fires
         // here instead, once the money is genuinely on its way.
         SendTemplatedSms::dispatch(SmsEvent::TransferSent, $transfer->id);
+        SendTemplatedSms::dispatch(SmsEvent::ReceiverWaiting, $transfer->id);
         app(EmailNotifier::class)->transferSent($transfer);
 
         return $transfer;

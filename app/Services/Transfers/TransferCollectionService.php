@@ -18,6 +18,33 @@ class TransferCollectionService
 {
     public function __construct(private RateService $rates) {}
 
+    /**
+     * Admin override: stop tracking a transfer as uncollected. Ledger untouched;
+     * any collections already recorded stay on file. Logged with the reason.
+     */
+    public function clearFlag(Transfer $transfer, User $by, string $reason): void
+    {
+        DB::transaction(function () use ($transfer, $by, $reason) {
+            $fresh = Transfer::query()->whereKey($transfer->id)->lockForUpdate()->firstOrFail();
+
+            if (! $fresh->is_uncollected) {
+                return;
+            }
+
+            $fresh->update(['is_uncollected' => false]);
+
+            activity()
+                ->causedBy($by)
+                ->performedOn($fresh)
+                ->withProperties([
+                    'reason' => $reason,
+                    'outstanding_cents' => $fresh->outstandingCents(),
+                    'collected_cents' => $fresh->collected_cents,
+                ])
+                ->log('Uncollected flag cleared');
+        });
+    }
+
     public function record(
         Transfer $transfer,
         User $by,

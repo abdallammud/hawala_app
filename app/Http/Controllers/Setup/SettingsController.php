@@ -69,6 +69,7 @@ class SettingsController extends Controller
             'payout_allow_self_claim' => ['boolean'],
 
             'credit_default_max' => ['nullable', 'numeric', 'min:0'],
+            'credit_approvals_required' => ['sometimes', 'integer', 'min:2', 'max:5'],
 
             'sms_enabled' => ['boolean'],
             'sms_driver' => ['nullable', Rule::enum(SmsProvider::class)],
@@ -82,6 +83,10 @@ class SettingsController extends Controller
             'sms_hormuud_api_url' => ['nullable', 'url:http,https', 'max:255'],
 
             'receipts_enabled' => ['boolean'],
+
+            'banners_transfer_reminder' => ['boolean'],
+            'banners_new_destination' => ['boolean'],
+            'banners_new_destination_days' => ['sometimes', 'integer', 'min:1', 'max:90'],
 
             'security_two_factor_required' => ['boolean'],
             // Never longer than the session itself, or the timeout could not fire.
@@ -120,6 +125,10 @@ class SettingsController extends Controller
 
         Settings::set('credit.default_max_cents', $request->filled('credit_default_max') ? Money::parseCents((string) $validated['credit_default_max']) : null, $updatedBy);
 
+        if (isset($validated['credit_approvals_required'])) {
+            Settings::set('credit.approvals_required', (int) $validated['credit_approvals_required'], $updatedBy);
+        }
+
         Settings::set('sms.enabled', $request->boolean('sms_enabled'), $updatedBy);
         Settings::set('sms.driver', $validated['sms_driver'] ?? null, $updatedBy);
 
@@ -128,6 +137,13 @@ class SettingsController extends Controller
         }
 
         Settings::set('receipts.enabled', $request->boolean('receipts_enabled'), $updatedBy);
+
+        Settings::set('banners.transfer_reminder', $request->boolean('banners_transfer_reminder'), $updatedBy);
+        Settings::set('banners.new_destination', $request->boolean('banners_new_destination'), $updatedBy);
+
+        if (isset($validated['banners_new_destination_days'])) {
+            Settings::set('banners.new_destination_days', (int) $validated['banners_new_destination_days'], $updatedBy);
+        }
 
         Settings::set('security.two_factor_required', $request->boolean('security_two_factor_required'), $updatedBy);
         Settings::set('security.idle_timeout_minutes', (int) $validated['security_idle_timeout_minutes'], $updatedBy);

@@ -51,7 +51,7 @@
                                     <button type="submit" class="text-red-600 hover:text-red-700 font-medium text-sm">{{ __('Reject') }}</button>
                                 </form>
                             @elseif ($req->decidedBy)
-                                <span class="text-xs text-slate-400">{{ $req->decided_at?->format('M j, Y') }} — {{ $req->decidedBy->name }}</span>
+                                <span class="text-xs text-slate-400">{{ $req->decided_at?->toLocal()->format('M j, Y') }} — {{ $req->decidedBy->name }}</span>
                             @endif
                         </td>
                     </tr>

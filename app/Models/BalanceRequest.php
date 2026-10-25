@@ -6,13 +6,14 @@ use App\Enums\BalanceRequestKind;
 use App\Enums\BalanceRequestStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BalanceRequest extends Model
 {
     protected $fillable = [
         'user_id', 'kind', 'amount_cents', 'original_currency', 'original_amount_cents', 'rate',
         'company_account_id', 'status', 'requested_by', 'decided_by', 'decided_at', 'note',
-        'reference', 'journal_entry_id',
+        'reference', 'journal_entry_id', 'approvals_required',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class BalanceRequest extends Model
             'status' => BalanceRequestStatus::class,
             'amount_cents' => 'integer',
             'original_amount_cents' => 'integer',
+            'approvals_required' => 'integer',
             'rate' => 'decimal:8',
             'decided_at' => 'datetime',
         ];
@@ -50,5 +52,24 @@ class BalanceRequest extends Model
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function approvals(): HasMany
+    {
+        return $this->hasMany(BalanceRequestApproval::class)->orderBy('id');
+    }
+
+    public function hasApprovalFrom(User $user): bool
+    {
+        return $this->approvals->contains('user_id', $user->id);
+    }
+
+    /** Whether this user can still add an approval or a rejection to it. */
+    public function awaitingDecisionFrom(User $user): bool
+    {
+        return $this->status === BalanceRequestStatus::Pending
+            && $user->can($this->kind->approvePermission())
+            && $user->id !== $this->requested_by
+            && ! $this->hasApprovalFrom($user);
     }
 }

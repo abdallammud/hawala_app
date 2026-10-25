@@ -113,15 +113,35 @@
                 @endif
 
                 <div class="ml-auto flex items-center gap-2 shrink-0">
-                    <a href="{{ Route::has('notifications.index') ? route('notifications.index') : '#' }}" class="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg">
-                        <x-icon name="bell" class="w-5 h-5" />
-                        @php $unread = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
-                        @if ($unread > 0)
-                            <span class="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-gold-500 text-white text-[10px] font-semibold flex items-center justify-center">
-                                {{ $unread > 9 ? '9+' : $unread }}
-                            </span>
-                        @endif
-                    </a>
+                    @php $unread = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
+                    <div
+                        class="flex items-center gap-1"
+                        x-data="notificationBell({
+                            pollUrl: '{{ route('notifications.poll') }}',
+                            indexUrl: '{{ route('notifications.index') }}',
+                            unread: {{ $unread }},
+                            title: @js(config('app.name')),
+                        })"
+                    >
+                        <button
+                            type="button"
+                            x-show="permission === 'default'"
+                            x-cloak
+                            x-on:click="enable()"
+                            class="hidden sm:block text-xs font-medium text-brand-700 hover:bg-brand-50 rounded-lg px-2 py-1.5"
+                            title="{{ __('Get a sound and pop-up when something needs your attention') }}"
+                        >{{ __('Enable alerts') }}</button>
+
+                        <a href="{{ route('notifications.index') }}" class="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg">
+                            <x-icon name="bell" class="w-5 h-5" />
+                            <span
+                                x-show="unread > 0"
+                                x-cloak
+                                x-text="unread > 9 ? '9+' : unread"
+                                class="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-gold-500 text-white text-[10px] font-semibold flex items-center justify-center"
+                            >{{ $unread > 9 ? '9+' : $unread }}</span>
+                        </a>
+                    </div>
 
                     <div x-data="{ open: false }" class="relative">
                         <button type="button" x-on:click="open = !open" x-on:click.outside="open = false" class="flex items-center gap-2 p-1.5 pr-2.5 rounded-lg hover:bg-slate-100">
@@ -181,6 +201,8 @@
                 </a>
             @endif
             </div>
+
+            @include('partials.agent-banners')
 
             {{-- Page content --}}
             <main class="flex-1 px-4 sm:px-6 py-6">

@@ -180,9 +180,11 @@ it('allows topup_credit within the settings default when the user has no overrid
 
     $agent = User::factory()->create(['type' => UserType::SendingAgent]);
     $admin = User::factory()->create();
+    $second = User::factory()->create();
 
     $request = balanceRequestService()->submit(BalanceRequestKind::TopupCredit, $agent, 800_00, $agent);
     balanceRequestService()->approve($request, $admin);
+    balanceRequestService()->approve($request, $second);
 
     $credit = app(LedgerService::class)->accountFor($agent, LedgerAccountType::AgentCredit);
     expect($credit->fresh()->balance_cents)->toBe(80000);

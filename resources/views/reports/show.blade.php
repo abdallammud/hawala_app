@@ -41,12 +41,12 @@
             <form method="GET" class="flex flex-wrap gap-3 items-end">
                 @if (in_array('from', $available))
                     <div class="w-full sm:w-40">
-                        <x-input name="from" label="{{ __('From') }}" type="date" :value="$filters->from->toDateString()" />
+                        <x-input name="from" label="{{ __('From') }}" type="date" :value="$filters->fromDate()" />
                     </div>
                 @endif
                 @if (in_array('to', $available))
                     <div class="w-full sm:w-40">
-                        <x-input name="to" label="{{ __('To') }}" type="date" :value="$filters->to->toDateString()" />
+                        <x-input name="to" label="{{ __('To') }}" type="date" :value="$filters->toDate()" />
                     </div>
                 @endif
                 @if (in_array('branch', $available))

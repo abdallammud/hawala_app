@@ -3,6 +3,7 @@
 namespace App\Services\Sms;
 
 use App\Models\Transfer;
+use App\Support\LocalTime;
 use App\Support\Money;
 use App\Support\Settings;
 
@@ -15,7 +16,7 @@ class SmsTemplateRenderer
 {
     public const PLACEHOLDERS = [
         '{code}', '{sender_name}', '{sender_phone}', '{receiver_name}', '{receiver_phone}',
-        '{amount_usd}', '{fee_usd}', '{branch}', '{date}', '{agent_name}', '{company_name}',
+        '{amount_usd}', '{fee_usd}', '{branch}', '{date}', '{paid_date}', '{agent_name}', '{company_name}',
     ];
 
     public function render(string $body, array $values = []): string
@@ -47,6 +48,7 @@ class SmsTemplateRenderer
             'fee_usd' => Money::format($transfer->fee_cents),
             'branch' => $transfer->branch?->name,
             'date' => $transfer->created_at?->timezone(Settings::get('general.timezone', 'Africa/Mogadishu'))->format('Y-m-d H:i'),
+            'paid_date' => $transfer->paid_at?->timezone(Settings::get('general.timezone', 'Africa/Mogadishu'))->format('Y-m-d H:i'),
             'agent_name' => $transfer->sendingAgent?->name,
         ], $extra);
     }
@@ -63,7 +65,8 @@ class SmsTemplateRenderer
             'amount_usd' => Money::format(25000),
             'fee_usd' => Money::format(1250),
             'branch' => 'Mogadishu',
-            'date' => now()->format('Y-m-d H:i'),
+            'date' => LocalTime::now()->format('Y-m-d H:i'),
+            'paid_date' => LocalTime::now()->format('Y-m-d H:i'),
             'agent_name' => 'Ali Hassan',
         ];
     }

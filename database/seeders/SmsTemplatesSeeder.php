@@ -28,13 +28,13 @@ class SmsTemplatesSeeder extends Seeder
             SmsEvent::TransferSent->value => [
                 'body' => '{company_name}: {amount_usd} is on its way to {receiver_name}. Reference {code}. Collect at our {branch} branch.',
                 'to_sender' => true,
-                'to_receiver' => true,
+                'to_receiver' => false, // receiver_waiting has its own wording
                 'to_sending_agent' => false,
                 'to_payout_agent' => false,
             ],
             SmsEvent::TransferPaid->value => [
-                'body' => '{company_name}: {amount_usd} (ref {code}) has been paid to {receiver_name} on {date}. Thank you.',
-                'to_sender' => true,
+                'body' => '{company_name}: {amount_usd} (ref {code}) has been paid to {receiver_name} on {paid_date}. Thank you.',
+                'to_sender' => false, // sender_paid has its own wording
                 'to_receiver' => true,
                 'to_sending_agent' => false,
                 'to_payout_agent' => false,
@@ -65,6 +65,20 @@ class SmsTemplatesSeeder extends Seeder
                 'to_sender' => false,
                 'to_receiver' => false,
                 'to_sending_agent' => true,
+                'to_payout_agent' => false,
+            ],
+            SmsEvent::ReceiverWaiting->value => [
+                'body' => '{company_name}: {receiver_name}, you have {amount_usd} waiting from {sender_name}. Tracker number: {code}. Keep this number to collect your money.',
+                'to_sender' => false,
+                'to_receiver' => true,
+                'to_sending_agent' => false,
+                'to_payout_agent' => false,
+            ],
+            SmsEvent::SenderPaid->value => [
+                'body' => '{company_name}: the {amount_usd} you sent to {receiver_name} (tracker {code}) has been paid on {paid_date}. Thank you for using {company_name}.',
+                'to_sender' => true,
+                'to_receiver' => false,
+                'to_sending_agent' => false,
                 'to_payout_agent' => false,
             ],
         ];

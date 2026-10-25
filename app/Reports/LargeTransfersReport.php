@@ -65,7 +65,7 @@ class LargeTransfersReport extends Report
             ->get()
             ->map(fn (Transfer $t) => [
                 'code' => $t->code,
-                'date' => $t->created_at->format('Y-m-d H:i'),
+                'date' => $t->created_at->toLocal()->format('Y-m-d H:i'),
                 'agent' => $t->sendingAgent->name,
                 'branch' => $t->branch->name,
                 'receiver' => $t->receiver_name.' ('.$t->receiver_phone.')',

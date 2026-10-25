@@ -12,6 +12,7 @@ use App\Models\Branch;
 use App\Models\LedgerAccount;
 use App\Models\User;
 use App\Services\Auth\TwoFactorService;
+use App\Services\Banners\DestinationAnnouncer;
 use App\Support\CommissionInput;
 use App\Support\LedgerStatement;
 use App\Support\Money;
@@ -60,7 +61,7 @@ class UsersController extends Controller
         ]);
     }
 
-    public function store(StoreUserRequest $request): RedirectResponse
+    public function store(StoreUserRequest $request, DestinationAnnouncer $announcer): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -80,6 +81,7 @@ class UsersController extends Controller
         ]);
 
         $user->assignRole($validated['role']);
+        $announcer->userSaved($user);
 
         return redirect()->route('users.index')->with('status', __(':name was created.', ['name' => $user->name]));
     }
@@ -97,7 +99,7 @@ class UsersController extends Controller
         ]);
     }
 
-    public function update(UpdateUserRequest $request, User $user): RedirectResponse
+    public function update(UpdateUserRequest $request, User $user, DestinationAnnouncer $announcer): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -117,6 +119,7 @@ class UsersController extends Controller
         ])->save();
 
         $user->syncRoles([$validated['role']]);
+        $announcer->userSaved($user);
 
         return back()->with('status', __('Changes saved.'));
     }
@@ -184,11 +187,12 @@ class UsersController extends Controller
         return back()->with('status', __(':name will set up two-factor again at their next login.', ['name' => $user->name]));
     }
 
-    public function activate(User $user): RedirectResponse
+    public function activate(User $user, DestinationAnnouncer $announcer): RedirectResponse
     {
         $this->authorize('deactivate', $user);
 
         $user->update(['is_active' => true]);
+        $announcer->userSaved($user);
 
         return back()->with('status', __(':name was reactivated.', ['name' => $user->name]));
     }

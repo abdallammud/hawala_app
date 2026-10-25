@@ -77,7 +77,7 @@ class CreditOwedReport extends Report
                 'repaid' => (int) $repayments->sum('amount_cents'),
                 'outstanding' => $account->balance_cents,
                 'limit' => $account->owner?->max_credit_cents ?? 0,
-                'last_repayment' => $repayments->max('decided_at')?->format('Y-m-d') ?? '—',
+                'last_repayment' => $repayments->max('decided_at')?->toLocal()->format('Y-m-d') ?? '—',
             ];
         })
             ->filter(fn (array $row) => $row['given'] !== 0 || $row['repaid'] !== 0 || $row['outstanding'] !== 0)

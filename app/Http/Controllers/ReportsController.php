@@ -89,7 +89,7 @@ class ReportsController extends Controller
         $canvas->page_text(30, $canvas->get_height() - 30, $data['companyName'].' · '.$definition->title(), $font, 8, $grey);
         $canvas->page_text($canvas->get_width() - 90, $canvas->get_height() - 30, __('Page').' {PAGE_NUM} / {PAGE_COUNT}', $font, 8, $grey);
 
-        return $pdf->download(sprintf('%s-%s-to-%s.pdf', $definition->key(), $filters->from->toDateString(), $filters->to->toDateString()));
+        return $pdf->download(sprintf('%s-%s-to-%s.pdf', $definition->key(), $filters->fromDate(), $filters->toDate()));
     }
 
     public function export(Request $request, string $report): StreamedResponse
@@ -99,8 +99,8 @@ class ReportsController extends Controller
         $filename = sprintf(
             '%s-%s-to-%s.csv',
             $definition->key(),
-            $filters->from->toDateString(),
-            $filters->to->toDateString()
+            $filters->fromDate(),
+            $filters->toDate()
         );
 
         $columns = $definition->columns();
@@ -178,7 +178,7 @@ class ReportsController extends Controller
 
         foreach ($report->availableFilters() as $filter) {
             $line = match ($filter) {
-                'from' => [__('Period'), $f->from->toDateString().' '.__('to').' '.$f->to->toDateString()],
+                'from' => [__('Period'), $f->fromDate().' '.__('to').' '.$f->toDate()],
                 'branch' => [__('Branch'), $options['branches'][$f->branchId] ?? __('All branches')],
                 'agent' => [__('Agent'), $options['agents'][$f->agentId] ?? __('All agents')],
                 'expense_type' => [__('Category'), $options['expenseTypes'][$f->expenseTypeId] ?? __('All categories')],

@@ -77,7 +77,7 @@ class CustomersReport extends Report
                     'transfers' => $t->count(),
                     'amount' => (int) $t->sum('amount_cents'),
                     'fees' => (int) $t->sum('fee_cents'),
-                    'last' => $t->max('created_at')->format('Y-m-d'),
+                    'last' => $t->max('created_at')->toLocal()->format('Y-m-d'),
                 ];
             })
             ->sortByDesc('amount')

@@ -82,7 +82,7 @@ class TransfersReport extends Report
             ->get()
             ->map(fn (Transfer $t) => [
                 'code' => $t->code,
-                'date' => $t->created_at->format('Y-m-d H:i'),
+                'date' => $t->created_at->toLocal()->format('Y-m-d H:i'),
                 'sending_agent' => $t->sendingAgent->name,
                 'payout_agent' => $t->paidBy?->name ?? $t->claimedBy?->name ?? '—',
                 'branch' => $t->branch->name,

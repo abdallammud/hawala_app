@@ -16,7 +16,7 @@ class StoreBranchRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:100', Rule::unique('branches', 'name')->ignore($this->route('branch'))],
-            'city' => ['required', 'string', 'max:100'],
+            'city' => ['nullable', 'string', 'max:100'],
             'is_payout_point' => ['boolean'],
         ];
     }

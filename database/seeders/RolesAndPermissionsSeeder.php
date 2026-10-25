@@ -18,7 +18,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'transfers.create', 'transfers.view_own', 'transfers.view_branch', 'transfers.view_all',
         'transfers.cancel_own', 'transfers.request_cancel', 'transfers.cancel_any',
         'transfers.approve_cancel', 'transfers.approve_large',
-        'transfers.record_collection', 'transfers.export',
+        'transfers.record_collection', 'transfers.clear_uncollected', 'transfers.export',
 
         'queue.view', 'queue.claim', 'queue.mark_paid', 'queue.force_assign', 'queue.unassign',
 
@@ -34,7 +34,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'users.manage_payout_accounts', 'users.set_credit_limit', 'users.reset_two_factor',
 
         'setup.branches', 'setup.account_types', 'setup.currencies', 'setup.fees', 'setup.settings',
-        'setup.sms', 'setup.roles', 'setup.email', 'setup.email_settings',
+        'setup.sms', 'setup.roles', 'setup.email', 'setup.email_settings', 'setup.cities',
 
         'reports.transfers', 'reports.agent_statement', 'reports.uncollected', 'reports.credit',
         'reports.commissions', 'reports.payouts_by_method', 'reports.branch_summary',

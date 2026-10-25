@@ -72,7 +72,7 @@ class CancellationsReport extends Report
             ->map(fn (Transfer $t) => [
                 'kind' => $t->status === TransferStatus::Rejected ? __('Rejected') : __('Cancelled'),
                 'sort_at' => $t->cancelled_at,
-                'date' => $t->cancelled_at?->format('Y-m-d H:i') ?? '—',
+                'date' => $t->cancelled_at?->toLocal()->format('Y-m-d H:i') ?? '—',
                 'code' => $t->code,
                 'branch' => $t->branch->name,
                 'who' => $t->cancelledBy?->name ?? '—',
@@ -94,7 +94,7 @@ class CancellationsReport extends Report
             ->map(fn (ClaimExpiry $e) => [
                 'kind' => __('Claim timed out'),
                 'sort_at' => $e->expired_at,
-                'date' => $e->expired_at->format('Y-m-d H:i'),
+                'date' => $e->expired_at->toLocal()->format('Y-m-d H:i'),
                 'code' => $e->transfer->code,
                 'branch' => $e->transfer->branch->name,
                 'who' => $e->user?->name ?? '—',

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Balances;
 
 use App\Enums\BalanceRequestKind;
+use App\Enums\BalanceRequestStatus;
+use App\Exceptions\Balances\AlreadyApprovedException;
 use App\Exceptions\Balances\MaxCreditExceededException;
 use App\Exceptions\Balances\SelfApprovalException;
 use App\Http\Controllers\Controller;
@@ -26,7 +28,7 @@ class BalanceRequestsController extends Controller
 
         $requests = BalanceRequest::query()
             ->where('user_id', $request->user()->id)
-            ->with(['companyAccount', 'decidedBy'])
+            ->with(['companyAccount', 'decidedBy', 'approvals.user'])
             ->latest()
             ->paginate(20);
 
@@ -59,8 +61,10 @@ class BalanceRequestsController extends Controller
 
         try {
             if ($request->user()->isNot($beneficiary) && $request->user()->can($kind->approvePermission())) {
-                $this->balanceRequests->actDirectly($kind, $beneficiary, $amountCents, $request->user(), $companyAccount, $note);
-                $message = __('Recorded and approved.');
+                $recorded = $this->balanceRequests->actDirectly($kind, $beneficiary, $amountCents, $request->user(), $companyAccount, $note);
+                $message = $recorded->status === BalanceRequestStatus::Approved
+                    ? __('Recorded and approved.')
+                    : __('Request recorded. It needs :count approvals from other people before it is applied.', ['count' => $recorded->approvals_required]);
             } else {
                 $this->balanceRequests->submit($kind, $beneficiary, $amountCents, $request->user(), $companyAccount, $note);
                 $message = __('Request submitted for approval.');
@@ -77,7 +81,7 @@ class BalanceRequestsController extends Controller
         $this->authorize('balances.view_all');
 
         $requests = BalanceRequest::query()
-            ->with(['user', 'requestedBy', 'companyAccount'])
+            ->with(['user', 'requestedBy', 'companyAccount', 'approvals.user'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->when(! $request->filled('status'), fn ($q) => $q->orderByRaw("status = 'pending' desc"))
             ->latest()
@@ -92,12 +96,19 @@ class BalanceRequestsController extends Controller
         $this->authorize($balanceRequest->kind->approvePermission());
 
         try {
-            $this->balanceRequests->approve($balanceRequest, $request->user());
-        } catch (SelfApprovalException|MaxCreditExceededException $e) {
+            $approved = $this->balanceRequests->approve($balanceRequest, $request->user());
+        } catch (SelfApprovalException|MaxCreditExceededException|AlreadyApprovedException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        } catch (\RuntimeException $e) {
             return back()->withErrors(['status' => $e->getMessage()]);
         }
 
-        return back()->with('status', __('Request approved.'));
+        return back()->with('status', $approved->status === BalanceRequestStatus::Approved
+            ? __('Request approved.')
+            : __('Your approval is recorded (:given of :required). A different person must give the next one.', [
+                'given' => $approved->approvals()->count(),
+                'required' => $approved->approvals_required,
+            ]));
     }
 
     public function reject(Request $request, BalanceRequest $balanceRequest): RedirectResponse

@@ -1,9 +1,18 @@
-@props(['label' => null, 'name', 'options' => [], 'hint' => null, 'placeholder' => null, 'value' => null])
+{{--
+    `dependsOn` makes this a child of another searchable-select: pass that field's
+    name, a `byParent` map of parent value => options, and the parent's current
+    value. The options are then only the ones for the chosen parent, and a value
+    that doesn't belong to it is cleared.
+--}}
+@props(['label' => null, 'name', 'options' => [], 'hint' => null, 'placeholder' => null, 'value' => null,
+        'dependsOn' => null, 'byParent' => [], 'parentValue' => null])
 
 @php
 $hasError = $errors->has($name);
 $selected = (string) old($name, $value);
-$list = collect($options)->map(fn ($o) => (string) $o)->values()->all();
+$map = collect($byParent)->map(fn ($list) => collect($list)->map(fn ($o) => (string) $o)->values()->all())->all();
+$parent = $dependsOn ? (string) old($dependsOn, $parentValue) : '';
+$list = $dependsOn ? ($map[$parent] ?? []) : collect($options)->map(fn ($o) => (string) $o)->values()->all();
 @endphp
 
 <div
@@ -11,12 +20,38 @@ $list = collect($options)->map(fn ($o) => (string) $o)->values()->all();
     x-data="{
         options: @js($list),
         value: @js($selected),
+        parentName: @js($dependsOn),
+        byParent: @js($map),
+        parent: @js($parent),
         query: '',
         open: false,
         active: 0,
         init() {
-            if (this.value && !this.options.includes(this.value)) this.options.unshift(this.value);
+            if (this.parentName) { this.options = this.optionsFor(this.parent); this.value = this.canonical(this.value); }
+            else if (this.value && !this.options.includes(this.value)) this.options.unshift(this.value);
             this.query = this.value;
+        },
+        // The listed spelling of v, or '' when this field has no such option.
+        canonical(v) { return this.options.find(o => o.toLowerCase() === (v ?? '').toLowerCase()) ?? ''; },
+        announce() { this.$dispatch('select-changed', { name: @js($name), value: this.value }); },
+        optionsFor(p) {
+            const key = Object.keys(this.byParent).find(k => k.toLowerCase() === (p ?? '').toLowerCase());
+            return key === undefined ? [] : [...this.byParent[key]];
+        },
+        parentChanged(d) {
+            if (d.name !== this.parentName) return;
+            this.parent = d.value;
+            this.options = this.optionsFor(d.value);
+            this.setValue(this.canonical(this.value));
+        },
+        setValue(v) {
+            const changed = v !== this.value;
+            this.value = v; this.query = v;
+            if (changed) this.announce();
+        },
+        get placeholderText() {
+            if (!this.parentName || this.options.length) return @js($placeholder ?? __('Type to search'));
+            return this.parent ? @js(__('No cities set up for this country yet')) : @js(__('Select a country first'));
         },
         get filtered() {
             const q = this.query.trim().toLowerCase();
@@ -24,12 +59,13 @@ $list = collect($options)->map(fn ($o) => (string) $o)->values()->all();
             return this.options.filter(o => o.toLowerCase().includes(q));
         },
         show() { this.open = true; this.active = Math.max(0, this.filtered.indexOf(this.value)); this.$refs.box.select(); },
-        choose(o) { this.value = o; this.query = o; this.open = false; },
+        choose(o) { this.open = false; this.setValue(o); },
         // Called when another script (e.g. picking a saved customer) sets the hidden input.
         external() {
-            const v = this.$refs.hidden.value;
-            if (v && !this.options.includes(v)) this.options.unshift(v);
-            this.value = v; this.query = v;
+            let v = this.$refs.hidden.value;
+            if (this.parentName) v = this.canonical(v);
+            else if (v && !this.options.includes(v)) this.options.unshift(v);
+            this.setValue(v);
         },
         close() {
             this.open = false;
@@ -44,6 +80,9 @@ $list = collect($options)->map(fn ($o) => (string) $o)->values()->all();
         pick() { if (this.open && this.filtered[this.active] !== undefined) this.choose(this.filtered[this.active]); },
     }"
     x-on:click.outside="close()"
+    @if ($dependsOn)
+        x-on:select-changed.window="parentChanged($event.detail)"
+    @endif
 >
     @if ($label)
         <label for="{{ $name }}_search" class="block text-sm font-medium text-slate-700 mb-1.5">{{ $label }}</label>
@@ -58,6 +97,7 @@ $list = collect($options)->map(fn ($o) => (string) $o)->values()->all();
         autocomplete="off"
         x-ref="box"
         x-model="query"
+        :placeholder="placeholderText"
         placeholder="{{ $placeholder ?? __('Type to search') }}"
         x-on:focus="show()"
         x-on:input="open = true; active = 0"

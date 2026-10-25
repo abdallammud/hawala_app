@@ -34,7 +34,7 @@
 
                 @foreach ($requests as $req)
                     <tr>
-                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $req->created_at->format('M j, Y') }}</td>
+                        <td class="px-4 py-3 text-slate-500" data-label="{{ __('Date') }}">{{ $req->created_at->toLocal()->format('M j, Y') }}</td>
                         <td class="px-4 py-3 text-slate-700" data-label="{{ __('Debit') }}">{{ $req->debitLedgerAccount->name }}</td>
                         <td class="px-4 py-3 text-slate-700" data-label="{{ __('Credit') }}">{{ $req->creditLedgerAccount->name }}</td>
                         <td class="px-4 py-3" data-label="{{ __('Amount') }}"><x-money :cents="$req->amount_cents" /></td>
