@@ -9,6 +9,8 @@
 
     <title>{{ $title ? $title.' — ' : '' }}{{ config('app.name') }}</title>
 
+    @include('partials.pwa-head')
+
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('images/favicon-32x32.png') }}" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
@@ -112,7 +114,9 @@
                     </a>
                 @endif
 
-                <div class="ml-auto flex items-center gap-2 shrink-0">
+                <div class="ml-auto flex items-center gap-1 sm:gap-2 shrink-0">
+                    <x-install-button />
+
                     @php $unread = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
                     <div
                         class="flex items-center gap-1"

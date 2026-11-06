@@ -2,14 +2,14 @@
     <div class="max-w-2xl space-y-6">
 
         <x-card>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div class="h-11 w-11 rounded-full bg-brand-600 text-white flex items-center justify-center font-semibold">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex min-w-0 items-center gap-3">
+                    <div class="h-11 w-11 shrink-0 rounded-full bg-brand-600 text-white flex items-center justify-center font-semibold">
                         {{ strtoupper(substr($user->name, 0, 1)) }}
                     </div>
-                    <div>
-                        <p class="font-semibold text-slate-900">{{ $user->name }}</p>
-                        <p class="text-sm text-slate-500">{{ $user->email }}</p>
+                    <div class="min-w-0">
+                        <p class="font-semibold text-slate-900 truncate">{{ $user->name }}</p>
+                        <p class="text-sm text-slate-500 truncate">{{ $user->email }}</p>
                     </div>
                 </div>
 

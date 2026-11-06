@@ -9,6 +9,8 @@
 
     <title>{{ $title ? $title.' — ' : '' }}{{ config('app.name') }}</title>
 
+    @include('partials.pwa-head')
+
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" href="{{ asset('images/favicon-32x32.png') }}" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ asset('images/apple-touch-icon.png') }}">
@@ -59,6 +61,8 @@
                 </div>
 
                 {{ $slot }}
+
+                <x-install-button variant="block" />
             </div>
         </div>
     </div>

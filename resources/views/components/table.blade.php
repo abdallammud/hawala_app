@@ -13,7 +13,8 @@
 --}}
 @props(['head'])
 
-<div class="overflow-x-auto -mx-5 sm:mx-0">
+{{-- Cards on a phone get a little air from the card edge; from `md` the table runs edge to edge. --}}
+<div class="overflow-x-auto px-3 pt-3 md:p-0">
     <table class="table-cards w-full text-sm sm:border sm:border-slate-200 sm:rounded-xl sm:overflow-hidden">
         <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
             <tr>{{ $head }}</tr>
