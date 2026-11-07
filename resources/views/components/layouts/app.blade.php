@@ -4,7 +4,7 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full bg-slate-50">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ? $title.' — ' : '' }}{{ config('app.name') }}</title>
@@ -209,7 +209,8 @@
             @include('partials.agent-banners')
 
             {{-- Page content --}}
-            <main class="flex-1 px-4 sm:px-6 py-6">
+            {{-- Phones: extra room at the bottom so the tab bar never covers the last row or a submit button. --}}
+            <main class="flex-1 px-4 sm:px-6 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-6">
                 <div class="max-w-7xl mx-auto space-y-6">
                     @if (session('status'))
                         <x-alert type="success" dismissible>{{ session('status') }}</x-alert>
@@ -219,6 +220,8 @@
                 </div>
             </main>
         </div>
+
+        @include('partials.bottom-nav')
     </div>
 
     @php $idleMinutes = (int) \App\Support\Settings::get('security.idle_timeout_minutes', 15); @endphp
@@ -262,7 +265,7 @@
             }"
             x-show="left <= 60"
             x-cloak
-            class="fixed inset-x-0 bottom-0 z-50 p-4 sm:p-6 pointer-events-none"
+            class="fixed inset-x-0 bottom-20 lg:bottom-0 z-50 p-4 sm:p-6 pointer-events-none"
             role="alert"
         >
             <div class="pointer-events-auto mx-auto max-w-md rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-lg flex items-center justify-between gap-4">

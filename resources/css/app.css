@@ -138,3 +138,12 @@
         text-align: left;
     }
 }
+
+/*
+ * Installed on a phone with a notch: keep content clear of it when the screen
+ * is turned sideways. (The bottom bar handles the bottom inset itself.)
+ */
+body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+}

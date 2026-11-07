@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Enums\TransferStatus;
+use App\Models\Transfer;
 use App\Models\User;
 
 /**
@@ -28,6 +30,52 @@ class Menu
             $items,
             array_keys($items),
         );
+    }
+
+    /**
+     * The phone's bottom bar: up to four shortcuts plus "More" (added by the
+     * view). Items come from the same permission-filtered list as the sidebar,
+     * so nobody gets a dead button. With a raised primary action it takes the
+     * centre of the five slots, so three ranked tabs go around it.
+     *
+     * @return array{primary: ?array<string, mixed>, left: array<int, array<string, mixed>>, right: array<int, array<string, mixed>>}
+     */
+    public static function bottomTabs(?User $user): array
+    {
+        $items = self::items($user);
+
+        $primary = collect($items)->first(fn (array $item) => ! empty($item['tab']['primary']));
+
+        $ranked = collect($items)
+            ->filter(fn (array $item) => isset($item['tab']['rank']))
+            ->sortBy(fn (array $item) => $item['tab']['rank'])
+            ->take($primary ? 3 : 4)
+            ->values()
+            ->map(fn (array $item) => $item + ['count' => self::badge($item['tab']['badge'] ?? null, $user)]);
+
+        if (! $primary) {
+            return ['primary' => null, 'left' => $ranked->all(), 'right' => []];
+        }
+
+        return [
+            'primary' => $primary,
+            'left' => $ranked->take(2)->all(),
+            'right' => $ranked->slice(2)->values()->all(),
+        ];
+    }
+
+    /** Live number shown on a tab; 0 hides the badge. */
+    public static function badge(?string $key, ?User $user): int
+    {
+        if ($key !== 'queue' || ! $user) {
+            return 0;
+        }
+
+        // Same scope as the Payout Queue page: staff see every branch, a payout agent their own.
+        return Transfer::query()
+            ->where('status', TransferStatus::Queued)
+            ->when(! $user->can('queue.force_assign'), fn ($q) => $q->where('branch_id', $user->branch_id))
+            ->count();
     }
 
     /**
