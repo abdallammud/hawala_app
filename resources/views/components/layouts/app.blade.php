@@ -216,6 +216,10 @@
                         <x-alert type="success" dismissible>{{ session('status') }}</x-alert>
                     @endif
 
+                    @if (session('error'))
+                        <x-alert type="error" dismissible>{{ session('error') }}</x-alert>
+                    @endif
+
                     {{ $slot }}
                 </div>
             </main>

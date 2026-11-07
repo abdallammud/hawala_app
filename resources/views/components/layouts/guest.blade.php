@@ -60,11 +60,37 @@
                     >
                 </div>
 
+                @if (session('error'))
+                    <x-alert type="error" class="mb-5">{{ session('error') }}</x-alert>
+                @endif
+
                 {{ $slot }}
 
                 <x-install-button variant="block" />
             </div>
         </div>
     </div>
+
+    <script>
+        // A login page left open for a while holds a CSRF token for a session
+        // that has since expired. When someone comes back to it (unlocks the
+        // phone, reopens the installed app), load a fresh one.
+        (function () {
+            var loadedAt = Date.now();
+            var maxAge = 10 * 60 * 1000;
+
+            function refreshIfOld() {
+                if (document.visibilityState === 'visible' && Date.now() - loadedAt > maxAge) {
+                    window.location.reload();
+                }
+            }
+
+            document.addEventListener('visibilitychange', refreshIfOld);
+            window.addEventListener('focus', refreshIfOld);
+            window.addEventListener('pageshow', function (event) {
+                if (event.persisted) { window.location.reload(); }
+            });
+        })();
+    </script>
 </body>
 </html>
